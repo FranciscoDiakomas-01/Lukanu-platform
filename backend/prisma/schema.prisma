@@ -1,0 +1,234 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum ROLE {
+  ADMIN
+  REGULAR
+}
+
+enum PAYSTATUS {
+  PAID
+  CANCELED
+  PENDING
+  REJECTED
+}
+
+enum LEVEL {
+  BEGINNER
+  INTERMEDIATE
+  ADVANCED
+}
+
+enum STATUS {
+  ACTIVED
+  DESACTIVED
+  PENDING
+}
+
+model User {
+  id                     Int           @id @default(autoincrement())
+  firstName              String
+  lastName               String
+  email                  String        @unique
+  password               String
+  phone                  String?       @unique
+  profileUrl             String?
+  createdAt              DateTime      @default(now())
+  updatedAt              DateTime      @updatedAt
+  status                 STATUS        @default(ACTIVED)
+
+  // stats
+  totalErned             Int           @default(0)
+  totalAvaliable         Int           @default(0)
+  totalTaked             Int           @default(0)
+  totalCourses           Int           @default(0)
+  totalBooks             Int           @default(0)
+  totalPendingPurchase   Int           @default(0)
+  totalActiveCourses     Int           @default(0)
+  totalDesactivedCourses Int           @default(0)
+
+  Ebooks                 Ebook[]
+  Wallets                Wallet[]
+  Courses                Course[]
+  Purschases             Purschase[]
+  Notifications          Notification[]
+  MessagesSent           Message[]     @relation("SentMessages")
+  MessagesReceived       Message[]     @relation("ReceivedMessages")
+}
+
+model Wallet {
+  id            Int       @id @default(autoincrement())
+  iban          String    @unique
+  bank          String
+  totalOperated Int       @default(0)
+  userId        Int
+  status        STATUS    @default(ACTIVED)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  owner         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Course {
+  id             Int             @id @default(autoincrement())
+  ownerId        Int
+  title          String
+  description    String
+  videoURl       String
+  category       String
+  price          Int
+  level          LEVEL
+  totalLessons   Int             @default(0)
+  totalStudents  Int             @default(0)
+  tags           String[]
+  rating         Float?
+  status         STATUS          @default(PENDING)
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+
+  owner          User            @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  Lessons        Lesson[]
+  Subscriptions  Subscription[]
+  Quizzes        Quiz[]
+  Chats          Chat[]
+  @@unique([title, level, ownerId])
+}
+
+model Lesson {
+  id          Int      @id @default(autoincrement())
+  courseId    Int
+  order       Int
+  title       String
+  description String
+  videoURl    String
+  tags        String[]
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  course      Course    @relation(fields: [courseId], references: [id], onDelete: Cascade)
+}
+
+model Subscription {
+  id          Int       @id @default(autoincrement())
+  courseId    Int
+  userId      Int
+  status      STATUS    @default(PENDING)
+  amount      Int
+  file        String
+  expiredAt   DateTime
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  course      Course    @relation(fields: [courseId], references: [id], onDelete: Cascade)
+}
+
+model Ebook {
+  id             Int       @id @default(autoincrement())
+  title          String
+  subtitle       String?
+  description    String?
+  coverUrl       String?
+  fileURl        String
+  metaData       Json?
+  currentPrice   Float
+  oldProce       Float      @default(0)
+  isShared       Boolean    @default(false)
+  sharePercent   Int?
+  language       String     @default("pt")
+  rating         Float?
+  pages          Int
+  tags           String[]
+  category       String
+  edition        Int        @default(1)
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+  authorId       Int?
+  author         User?      @relation(fields: [authorId], references: [id], onDelete: SetNull)
+  Purschases     Purschase[]
+}
+
+model Purschase {
+  id         Int        @id @default(autoincrement())
+  ownerId    Int
+  buyerId    Int
+  ebookId    Int
+  amount     Int
+  fileUrl    String
+  status     PAYSTATUS   @default(PENDING)
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
+  owner      User        @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  ebook      Ebook       @relation(fields: [ebookId], references: [id], onDelete: Cascade)
+}
+
+//
+// 🔔 NOTIFICATIONS
+//
+model Notification {
+  id          Int        @id @default(autoincrement())
+  userId      Int
+  title       String
+  message     String
+  read        Boolean     @default(false)
+  createdAt   DateTime    @default(now())
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+//
+// 🧠 QUIZ SYSTEM
+//
+model Quiz {
+  id          Int        @id @default(autoincrement())
+  title       String
+  description String?
+  courseId    Int
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  course      Course     @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  questions   Question[]
+}
+
+model Question {
+  id        Int       @id @default(autoincrement())
+  quizId    Int
+  text      String
+  createdAt DateTime  @default(now())
+  quiz      Quiz      @relation(fields: [quizId], references: [id], onDelete: Cascade)
+  options   Option[]
+}
+
+model Option {
+  id         Int      @id @default(autoincrement())
+  questionId Int
+  text       String
+  isCorrect  Boolean  @default(false)
+  question   Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+}
+
+//
+// 💬 CHAT SYSTEM
+//
+model Chat {
+  id          Int        @id @default(autoincrement())
+  courseId    Int
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  course      Course     @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  messages    Message[]
+}
+
+model Message {
+  id          Int       @id @default(autoincrement())
+  chatId      Int
+  senderId    Int
+  receiverId  Int
+  content     String
+  createdAt   DateTime  @default(now())
+
+  chat        Chat      @relation(fields: [chatId], references: [id], onDelete: Cascade)
+  sender      User      @relation("SentMessages", fields: [senderId], references: [id], onDelete: Cascade)
+  receiver    User      @relation("ReceivedMessages", fields: [receiverId], references: [id], onDelete: Cascade)
+}

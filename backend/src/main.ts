@@ -1,0 +1,50 @@
+import { NestFactory } from '@nestjs/core';
+import { AppModule } from './app.module';
+import compression from 'compression';
+import helmet from 'helmet';
+import { ConsoleLogger, Logger, ValidationPipe } from '@nestjs/common';
+import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { apiReference } from '@scalar/nestjs-api-reference';
+async function bootstrap() {
+  const app = await NestFactory.create(AppModule, {
+    logger: new ConsoleLogger({
+      prefix: 'LUKANU',
+    }),
+  });
+  const logger = new Logger('APP');
+
+  const config = new DocumentBuilder()
+    .setTitle('Lukanu')
+    .setDescription('API refernece')
+    .setVersion('1.0')
+    .addBearerAuth({
+      name: 'JWT-TOKEN',
+      type: 'apiKey',
+    })
+    .build();
+  const document = SwaggerModule.createDocument(app, config);
+  app.use(
+    '/docs',
+    apiReference({
+      content: document,
+      theme: 'deepSpace',
+      title: 'lukaku API documentation',
+    }),
+  );
+  await app.listen(process.env.PORT ?? 3000);
+  app.enableCors();
+  app.use(helmet());
+  app.use(compression());
+  app.useGlobalPipes(
+    new ValidationPipe({
+      whitelist: true,
+      transform: true,
+      forbidNonWhitelisted: true,
+      forbidUnknownValues: true,
+    }),
+  );
+  logger.verbose(
+    `Documentation ready on http://localhost:${process.env.PORT}/docs`,
+  );
+}
+bootstrap();
