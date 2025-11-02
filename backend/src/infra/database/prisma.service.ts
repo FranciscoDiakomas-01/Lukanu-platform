@@ -14,7 +14,7 @@ export default class PrismaService
   private readonly logger = new Logger('DatabaseService');
   constructor() {
     super({
-      log: ['error', 'query', 'warn', 'info'],
+      log: ['error', 'warn', 'info'],
     });
   }
   async onModuleDestroy() {

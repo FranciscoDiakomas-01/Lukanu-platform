@@ -31,10 +31,7 @@ async function bootstrap() {
       title: 'lukaku API documentation',
     }),
   );
-  await app.listen(process.env.PORT ?? 3000);
-  app.enableCors();
-  app.use(helmet());
-  app.use(compression());
+
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,
@@ -43,6 +40,10 @@ async function bootstrap() {
       forbidUnknownValues: true,
     }),
   );
+  app.enableCors();
+  app.use(helmet());
+  app.use(compression());
+  await app.listen(process.env.PORT ?? 3000);
   logger.verbose(
     `Documentation ready on http://localhost:${process.env.PORT}/docs`,
   );

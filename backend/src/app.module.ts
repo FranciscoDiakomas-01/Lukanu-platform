@@ -16,6 +16,7 @@ import ConfiguratinModule from '@infra/config/config.module';
 import PrismaModule from '@infra/database/prisma.module';
 import CacheModule from '@infra/cache/cahe.module';
 import { JwtModule } from '@nestjs/jwt';
+import { BcryptModule } from '@core/services/bcrypt/bcrypt.module';
 @Module({
   imports: [
     ConfiguratinModule,
@@ -38,6 +39,7 @@ import { JwtModule } from '@nestjs/jwt';
       global: true,
       secret: (process.env.JWT_SECRET as string) ?? '1234567890',
     }),
+    BcryptModule,
   ],
   controllers: [],
   providers: [],

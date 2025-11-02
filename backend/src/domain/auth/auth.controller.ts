@@ -1,34 +1,58 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import { Controller, Post, Body, Patch, Delete, Headers } from '@nestjs/common';
 import { AuthService } from './auth.service';
-import { CreateAuthDto } from './dto/create-auth.dto';
-import { UpdateAuthDto } from './dto/update-auth.dto';
+import { SignInDto } from './dto/create-auth.dto';
+import { ApiHeaders, ApiOperation } from '@nestjs/swagger';
+import { LoginDto } from './dto/login.dto';
 
 @Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
-  @Post()
-  create(@Body() createAuthDto: CreateAuthDto) {
-    return this.authService.create(createAuthDto);
+  @Post('signin')
+  @ApiOperation({
+    summary: 'signin',
+    description: 'Creating account',
+  })
+  signin(@Body() data: SignInDto) {
+    return this.authService.signIn(data);
   }
 
-  @Get()
-  findAll() {
-    return this.authService.findAll();
+  @ApiOperation({
+    summary: 'login',
+    description: 'Acess account',
+  })
+  @Post('login')
+  login(@Body() data: LoginDto) {
+    return this.authService.login(data);
   }
 
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.authService.findOne(+id);
+  @Delete('logout')
+  @ApiOperation({
+    summary: 'logout',
+    description: 'logout account',
+  })
+  @ApiHeaders([
+    {
+      name: 'sub',
+      explode: true,
+    },
+  ])
+  logout(@Headers('sub') id: number) {
+    return this.authService.logOut(id);
   }
 
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() updateAuthDto: UpdateAuthDto) {
-    return this.authService.update(+id, updateAuthDto);
-  }
-
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.authService.remove(+id);
+  @Patch('refresh')
+  @ApiOperation({
+    summary: 'refresh',
+    description: 'refresh account',
+  })
+  @ApiHeaders([
+    {
+      name: 'sub',
+      explode: true,
+    },
+  ])
+  refresh(@Headers('sub') id: string) {
+    return this.authService.refresh(+id);
   }
 }

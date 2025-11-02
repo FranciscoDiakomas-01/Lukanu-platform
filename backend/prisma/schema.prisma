@@ -41,6 +41,7 @@ model User {
   profileUrl             String?
   createdAt              DateTime      @default(now())
   updatedAt              DateTime      @updatedAt
+  role ROLE @default(REGULAR)
   status                 STATUS        @default(ACTIVED)
 
   // stats
@@ -52,6 +53,7 @@ model User {
   totalPendingPurchase   Int           @default(0)
   totalActiveCourses     Int           @default(0)
   totalDesactivedCourses Int           @default(0)
+  totalUnreadNotification Int          @default(0)
 
   Ebooks                 Ebook[]
   Wallets                Wallet[]
