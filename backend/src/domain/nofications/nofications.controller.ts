@@ -1,34 +1,35 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Headers,
+  ParseIntPipe,
+  Patch,
+  Query,
+} from '@nestjs/common';
 import { NoficationsService } from './nofications.service';
-import { CreateNoficationDto } from './dto/create-nofication.dto';
-import { UpdateNoficationDto } from './dto/update-nofication.dto';
+import { ApiOperation } from '@nestjs/swagger';
 
 @Controller('nofications')
 export class NoficationsController {
   constructor(private readonly noficationsService: NoficationsService) {}
 
-  @Post()
-  create(@Body() createNoficationDto: CreateNoficationDto) {
-    return this.noficationsService.create(createNoficationDto);
-  }
-
   @Get()
-  findAll() {
-    return this.noficationsService.findAll();
+  @ApiOperation({
+    summary: 'list',
+  })
+  findAll(
+    @Headers('sub') userId: string,
+    @Query('page', ParseIntPipe) page: number,
+    @Query('limit', ParseIntPipe) limit: number,
+  ) {
+    return this.noficationsService.findAll(+userId, page, limit);
   }
 
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.noficationsService.findOne(+id);
-  }
-
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() updateNoficationDto: UpdateNoficationDto) {
-    return this.noficationsService.update(+id, updateNoficationDto);
-  }
-
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.noficationsService.remove(+id);
+  @Patch('read')
+  @ApiOperation({
+    summary: 'read',
+  })
+  update(@Headers('sub') id: string) {
+    return this.noficationsService.update(+id);
   }
 }

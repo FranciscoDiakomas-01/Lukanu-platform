@@ -41,10 +41,11 @@ model User {
   profileUrl             String?
   createdAt              DateTime      @default(now())
   updatedAt              DateTime      @updatedAt
+  iban String? @unique
+  bank String?
   role ROLE @default(REGULAR)
   status                 STATUS        @default(ACTIVED)
-
-  // stats
+  
   totalErned             Int           @default(0)
   totalAvaliable         Int           @default(0)
   totalTaked             Int           @default(0)
@@ -56,25 +57,14 @@ model User {
   totalUnreadNotification Int          @default(0)
 
   Ebooks                 Ebook[]
-  Wallets                Wallet[]
   Courses                Course[]
   Purschases             Purschase[]
   Notifications          Notification[]
   MessagesSent           Message[]     @relation("SentMessages")
   MessagesReceived       Message[]     @relation("ReceivedMessages")
+  Afiliations Afiliations[]
 }
 
-model Wallet {
-  id            Int       @id @default(autoincrement())
-  iban          String    @unique
-  bank          String
-  totalOperated Int       @default(0)
-  userId        Int
-  status        STATUS    @default(ACTIVED)
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-  owner         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-}
 
 model Course {
   id             Int             @id @default(autoincrement())
@@ -85,25 +75,40 @@ model Course {
   category       String
   price          Int
   level          LEVEL
+  formLink  String?
+  isPublished Boolean @default(false)
   totalLessons   Int             @default(0)
+  totalModules Int @default(0)
   totalStudents  Int             @default(0)
   tags           String[]
   rating         Float?
   status         STATUS          @default(PENDING)
   createdAt      DateTime        @default(now())
   updatedAt      DateTime        @updatedAt
-
   owner          User            @relation(fields: [ownerId], references: [id], onDelete: Cascade)
-  Lessons        Lesson[]
   Subscriptions  Subscription[]
-  Quizzes        Quiz[]
+  Modules Module[]
   Chats          Chat[]
   @@unique([title, level, ownerId])
 }
 
+model Module {
+  id          Int      @id @default(autoincrement())
+  title String
+  description String
+  video String
+  totalLessons Int @default(0)
+  order Int
+  Lessons        Lesson[]
+  courseId Int
+
+  course Course @relation(references: [id] , fields: [courseId] , onDelete: Cascade)
+
+}
+
 model Lesson {
   id          Int      @id @default(autoincrement())
-  courseId    Int
+  moduleId    Int
   order       Int
   title       String
   description String
@@ -111,7 +116,7 @@ model Lesson {
   tags        String[]
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
-  course      Course    @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  module      Module    @relation(fields: [moduleId], references: [id], onDelete: Cascade)
 }
 
 model Subscription {
@@ -129,36 +134,56 @@ model Subscription {
 
 model Ebook {
   id             Int       @id @default(autoincrement())
+  code String @unique 
   title          String
   subtitle       String?
   description    String?
   coverUrl       String?
   fileURl        String
+  checkoutURL String
   metaData       Json?
-  currentPrice   Float
-  oldProce       Float      @default(0)
+  currentPrice   Int
+  oldProce       Int      @default(0)
   isShared       Boolean    @default(false)
-  sharePercent   Int?
+  isDigital Boolean @default(true)
+  sharePercent   Int @default(0)
   language       String     @default("pt")
-  rating         Float?
+  rating         Int @default(0)
+  views Int @default(0)
+  purshases Int @default(0)
   pages          Int
-  tags           String[]
   category       String
   edition        Int        @default(1)
   createdAt      DateTime   @default(now())
   updatedAt      DateTime   @updatedAt
-  authorId       Int?
-  author         User?      @relation(fields: [authorId], references: [id], onDelete: SetNull)
+  authorId       Int
+  author         User      @relation(fields: [authorId], references: [id], onDelete: Cascade)
   Purschases     Purschase[]
+  Afiliations Afiliations[]
+}
+
+model Afiliations {
+  id Int @id @default(autoincrement())
+  link String
+  userid Int
+  bookId Int
+  purchaseCount Int @default(0)
+  purchases Int @default(0)
+  ebook Ebook @relation(fields: [bookId] , references: [id] , onDelete: Cascade)
+  user User @relation(fields: [userid] , references: [id] , onDelete: Cascade)
 }
 
 model Purschase {
   id         Int        @id @default(autoincrement())
   ownerId    Int
-  buyerId    Int
+  buyerId    Int?
   ebookId    Int
-  amount     Int
+  price Int
+  payed Int
+  afiliationCode String?
+  description String?
   fileUrl    String
+  digital Boolean
   status     PAYSTATUS   @default(PENDING)
   createdAt  DateTime    @default(now())
   updatedAt  DateTime    @updatedAt
@@ -166,53 +191,18 @@ model Purschase {
   ebook      Ebook       @relation(fields: [ebookId], references: [id], onDelete: Cascade)
 }
 
-//
-// 🔔 NOTIFICATIONS
-//
 model Notification {
   id          Int        @id @default(autoincrement())
   userId      Int
   title       String
   message     String
   read        Boolean     @default(false)
+  deepLink String?
   createdAt   DateTime    @default(now())
   user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
-//
-// 🧠 QUIZ SYSTEM
-//
-model Quiz {
-  id          Int        @id @default(autoincrement())
-  title       String
-  description String?
-  courseId    Int
-  createdAt   DateTime   @default(now())
-  updatedAt   DateTime   @updatedAt
-  course      Course     @relation(fields: [courseId], references: [id], onDelete: Cascade)
-  questions   Question[]
-}
 
-model Question {
-  id        Int       @id @default(autoincrement())
-  quizId    Int
-  text      String
-  createdAt DateTime  @default(now())
-  quiz      Quiz      @relation(fields: [quizId], references: [id], onDelete: Cascade)
-  options   Option[]
-}
-
-model Option {
-  id         Int      @id @default(autoincrement())
-  questionId Int
-  text       String
-  isCorrect  Boolean  @default(false)
-  question   Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
-}
-
-//
-// 💬 CHAT SYSTEM
-//
 model Chat {
   id          Int        @id @default(autoincrement())
   courseId    Int
@@ -229,7 +219,6 @@ model Message {
   receiverId  Int
   content     String
   createdAt   DateTime  @default(now())
-
   chat        Chat      @relation(fields: [chatId], references: [id], onDelete: Cascade)
   sender      User      @relation("SentMessages", fields: [senderId], references: [id], onDelete: Cascade)
   receiver    User      @relation("ReceivedMessages", fields: [receiverId], references: [id], onDelete: Cascade)

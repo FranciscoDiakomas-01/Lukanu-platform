@@ -46,12 +46,6 @@ export class AuthController {
     summary: 'refresh',
     description: 'refresh account',
   })
-  @ApiHeaders([
-    {
-      name: 'sub',
-      explode: true,
-    },
-  ])
   refresh(@Headers('sub') id: string) {
     return this.authService.refresh(+id);
   }

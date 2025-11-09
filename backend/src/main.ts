@@ -17,10 +17,7 @@ async function bootstrap() {
     .setTitle('Lukanu')
     .setDescription('API refernece')
     .setVersion('1.0')
-    .addBearerAuth({
-      name: 'JWT-TOKEN',
-      type: 'apiKey',
-    })
+    .addBearerAuth()
     .build();
   const document = SwaggerModule.createDocument(app, config);
   app.use(

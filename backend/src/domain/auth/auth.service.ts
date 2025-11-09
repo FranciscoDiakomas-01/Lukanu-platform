@@ -19,10 +19,13 @@ import { SignInDto } from './dto/create-auth.dto';
 export class AuthService {
   constructor(
     private readonly prisma: PrismaService,
-    private readonly jwt: JwtService,
     private readonly bcrypt: BcryptService,
     private readonly cache: CacheService,
   ) {}
+
+  private readonly jwt = new JwtService({ secret: process.env.JWT_SECRET });
+
+  private readonly oneMonthInSeconds = 30 * 24 * 60 * 60;
 
   public async login(data: LoginDto) {
     const userWithEmail = await this.prisma.user.findFirst({
@@ -42,7 +45,7 @@ export class AuthService {
           sub: userProfile.id,
         },
         {
-          expiresIn: '1hr',
+          expiresIn: '1d',
         },
       ),
       this.jwt.signAsync(
@@ -51,7 +54,7 @@ export class AuthService {
           role: userProfile.role,
         },
         {
-          expiresIn: '30d',
+          expiresIn: '7d',
         },
       ),
     ]);
@@ -60,19 +63,15 @@ export class AuthService {
     }
     await Promise.all([
       this.cache.set(
-        `acessToken${userProfile.id}`,
-        JSON.stringify({
+        `refresh${userProfile.id}`,
+        {
           acess: acessToken,
           refres: refresToken,
           createdAT: new Date(),
-        }),
-        100000,
+        },
+        this.oneMonthInSeconds,
       ),
-      this.cache.set(
-        `userProfile${userProfile.id}`,
-        JSON.stringify(userProfile),
-        100000,
-      ),
+      this.cache.set(`userProfile${userProfile.id}`, userProfile, 500000),
       this.prisma.notification.create({
         data: {
           userId: userProfile.id,
@@ -138,27 +137,24 @@ export class AuthService {
           {
             sub: newUser.id,
             role: newUser.role,
+            createdAt: new Date(),
           },
           {
-            expiresIn: '30d',
+            expiresIn: '7d',
           },
         ),
       ]);
       await Promise.all([
         this.cache.set(
-          `acessToken${newUser.id}`,
-          JSON.stringify({
+          `refresh${newUser.id}`,
+          {
             acess: acessToken,
             refres: refresToken,
             createdAT: new Date(),
-          }),
-          100000,
+          },
+          this.oneMonthInSeconds,
         ),
-        this.cache.set(
-          `userProfile${newUser.id}`,
-          JSON.stringify(newUser),
-          100000,
-        ),
+        this.cache.set(`userProfile${newUser.id}`, newUser, 500000),
         this.prisma.notification.create({
           data: {
             userId: newUser.id,
@@ -199,32 +195,35 @@ export class AuthService {
     };
   }
   public async refresh(userId: number) {
-    const refreshToken = await this.cache.get<string>(`acessToken${userId}`);
+    const refreshToken = await this.cache.get<{
+      acess: string;
+      refres: string;
+    }>(`refresh${userId}`);
     if (refreshToken) {
       try {
-        const [isVerifyedToken, decodedRefreshToken] = await Promise.all([
-          this.jwt.verifyAsync(refreshToken),
-          this.jwt.decode<RefreshToken>(refreshToken),
+        const [decodedRefreshToken, validate] = await Promise.all([
+          this.jwt.decode<RefreshToken>(refreshToken.refres),
+          this.jwt.verifyAsync(refreshToken?.refres),
         ]);
-        if (isVerifyedToken && decodedRefreshToken?.sub) {
+        console.log(decodedRefreshToken, validate);
+        if (decodedRefreshToken?.sub) {
           const newAcessToken = await this.jwt.signAsync(
             {
               sub: decodedRefreshToken.sub,
             },
             {
-              expiresIn: '1hr',
+              expiresIn: '1d',
             },
           );
+          if (decodedRefreshToken?.sub != userId) {
+            throw new ForbiddenException('Açção suspeita');
+          }
           return {
             acessToken: newAcessToken,
             mustLogin: false,
           };
         }
       } catch (error) {
-        await Promise.all([
-          this.cache.delete(`acessToken${userId}`),
-          this.cache.delete(`userProfile${userId}`),
-        ]);
         throw new BadRequestException({
           message: error?.message ?? error?.cause,
           mustLogin: true,
@@ -232,7 +231,7 @@ export class AuthService {
       }
     }
     throw new ForbiddenException({
-      message: 'Acess token expired or not found',
+      message: 'Refresh token expired or not found in cache',
       mustLogin: true,
     });
   }
