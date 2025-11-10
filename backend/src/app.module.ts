@@ -21,6 +21,7 @@ import { JwtModule } from '@nestjs/jwt';
 import { BcryptModule } from '@core/services/bcrypt/bcrypt.module';
 import { AfiliatesModule } from '@domain/afiliates/afiliates.module';
 import AuthMiddleware from '@core/middlewares/isAuthenticated.middleware';
+import TaskModule from '@infra/shedule/task.module';
 @Module({
   imports: [
     ConfiguratinModule,
@@ -38,10 +39,10 @@ import AuthMiddleware from '@core/middlewares/isAuthenticated.middleware';
     JwtModule.register({
       global: true,
       secret: (process.env.JWT_SECRET as string) ?? '1234567890',
-      
     }),
     BcryptModule,
     AfiliatesModule,
+    TaskModule,
   ],
   controllers: [],
   providers: [],

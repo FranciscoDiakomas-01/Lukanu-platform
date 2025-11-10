@@ -16,12 +16,16 @@ import {
   UpdatePurchaseDto,
 } from './dto/create-purchase.dto';
 import isAdminGuard from '@core/guards/isAdmin.guard';
+import { ApiOperation } from '@nestjs/swagger';
 
 @Controller('purchase')
 export class PurchaseController {
   constructor(private readonly purchaseService: PurchaseService) {}
 
   @Post()
+  @ApiOperation({
+    summary: 'Purchase criation',
+  })
   create(
     @Body() createPurchaseDto: CreatePurchaseDto,
     @Headers('sub') userId: string,
@@ -30,6 +34,9 @@ export class PurchaseController {
   }
 
   @Get()
+  @ApiOperation({
+    summary: 'Purchase list',
+  })
   findAll(
     @Headers('sub') userId: string,
     @Query('page', ParseIntPipe) page: number,
@@ -38,6 +45,9 @@ export class PurchaseController {
     return this.purchaseService.findAll(+userId, page, limit);
   }
   @Patch(':id')
+  @ApiOperation({
+    summary: 'Purchase update , only for admin',
+  })
   @UseGuards(isAdminGuard)
   update(
     @Param('id') id: string,
