@@ -79,7 +79,9 @@ export class EbookService {
     userId: number;
     page: number;
     limit: number;
-  }) {
+    }) {
+    
+    page = Number.isNaN(page) ? page : 1;
     const finalLimit =
       limit > constants.max_items_per_page || limit <= 0
         ? constants.max_items_per_page
@@ -114,7 +116,7 @@ export class EbookService {
         }),
         this.prisma.ebook.count({}),
       ]);
-      const lastPage = Math.ceil(total / limit);
+      const lastPage = Math.ceil(total / finalLimit);
       return {
         data: ebooks,
         page,

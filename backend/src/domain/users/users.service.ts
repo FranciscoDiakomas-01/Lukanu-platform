@@ -18,6 +18,7 @@ export class UsersService {
     private readonly bcrypt: BcryptService,
   ) {}
   async findAll(page: number = 1, limit: number) {
+    page = Number.isNaN(page) ? page : 1;
     const finalLimit =
       limit > constants.max_items_per_page || limit <= 0
         ? constants.max_items_per_page

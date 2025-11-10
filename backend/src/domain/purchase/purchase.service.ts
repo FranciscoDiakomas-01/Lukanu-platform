@@ -106,6 +106,7 @@ export class PurchaseService {
     };
   }
   async findAll(userId: number, page: number, limit: number) {
+    page = Number.isNaN(page) ? page : 1;
     const finalLimit =
       limit > constants.max_items_per_page || limit <= 0
         ? constants.max_items_per_page

@@ -9,7 +9,6 @@ export async function isAnUser(
     const user = await database.user.findFirst({
       where: {
         id: userid,
-        status: 'ACTIVED',
       },
     });
     return user?.id ? true : false;

@@ -71,44 +71,27 @@ model Course {
   ownerId        Int
   title          String
   description    String
-  videoURl       String
+  videoURl       String?
   category       String
   price          Int
   level          LEVEL
   formLink  String?
   isPublished Boolean @default(false)
   totalLessons   Int             @default(0)
-  totalModules Int @default(0)
   totalStudents  Int             @default(0)
-  tags           String[]
-  rating         Float?
   status         STATUS          @default(PENDING)
   createdAt      DateTime        @default(now())
   updatedAt      DateTime        @updatedAt
   owner          User            @relation(fields: [ownerId], references: [id], onDelete: Cascade)
   Subscriptions  Subscription[]
-  Modules Module[]
+  Lessons Lesson[]
   Chats          Chat[]
   @@unique([title, level, ownerId])
 }
 
-model Module {
-  id          Int      @id @default(autoincrement())
-  title String
-  description String
-  video String
-  totalLessons Int @default(0)
-  order Int
-  Lessons        Lesson[]
-  courseId Int
-
-  course Course @relation(references: [id] , fields: [courseId] , onDelete: Cascade)
-
-}
-
 model Lesson {
   id          Int      @id @default(autoincrement())
-  moduleId    Int
+  courseId    Int
   order       Int
   title       String
   description String
@@ -116,7 +99,7 @@ model Lesson {
   tags        String[]
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
-  module      Module    @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  Course      Course    @relation(fields: [courseId], references: [id], onDelete: Cascade)
 }
 
 model Subscription {

@@ -20,7 +20,6 @@ import CacheModule from '@infra/cache/cahe.module';
 import { JwtModule } from '@nestjs/jwt';
 import { BcryptModule } from '@core/services/bcrypt/bcrypt.module';
 import { AfiliatesModule } from '@domain/afiliates/afiliates.module';
-import { ModulesModule } from '@domain/modules/modules.module';
 import AuthMiddleware from '@core/middlewares/isAuthenticated.middleware';
 @Module({
   imports: [
@@ -43,7 +42,6 @@ import AuthMiddleware from '@core/middlewares/isAuthenticated.middleware';
     }),
     BcryptModule,
     AfiliatesModule,
-    ModulesModule,
   ],
   controllers: [],
   providers: [],

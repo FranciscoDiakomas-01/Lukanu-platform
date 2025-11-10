@@ -1,34 +1,51 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+  UseGuards,
+  Headers,
+  ParseIntPipe,
+} from '@nestjs/common';
 import { LessonsService } from './lessons.service';
 import { CreateLessonDto } from './dto/create-lesson.dto';
-import { UpdateLessonDto } from './dto/update-lesson.dto';
+import isAdminGuard from '@core/guards/isAdmin.guard';
+import { ApiOperation } from '@nestjs/swagger';
 
 @Controller('lessons')
 export class LessonsController {
   constructor(private readonly lessonsService: LessonsService) {}
 
   @Post()
-  create(@Body() createLessonDto: CreateLessonDto) {
-    return this.lessonsService.create(createLessonDto);
+  @ApiOperation({
+    summary: 'Lesson creation , only for admin',
+  })
+  @UseGuards(isAdminGuard)
+  create(
+    @Body() createLessonDto: CreateLessonDto,
+    @Headers('sub') sub: string,
+  ) {
+    return this.lessonsService.create(createLessonDto, +sub);
   }
-
-  @Get()
-  findAll() {
-    return this.lessonsService.findAll();
-  }
-
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.lessonsService.findOne(+id);
-  }
-
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateLessonDto: UpdateLessonDto) {
+  @ApiOperation({
+    summary: 'Lesson update , only for admin',
+  })
+  @UseGuards(isAdminGuard)
+  update(
+    @Param('id', ParseIntPipe) id: string,
+    @Body() updateLessonDto: CreateLessonDto,
+  ) {
     return this.lessonsService.update(+id, updateLessonDto);
   }
-
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.lessonsService.remove(+id);
+  @ApiOperation({
+    summary: 'Lesson remotion , only for admin',
+  })
+  @UseGuards(isAdminGuard)
+  remove(@Param('id', ParseIntPipe) id: string, @Headers('sub') sub: string) {
+    return this.lessonsService.remove(+id, +sub);
   }
 }
