@@ -1,5 +1,4 @@
 import {
-  HttpCode,
   MiddlewareConsumer,
   Module,
   NestModule,
@@ -20,6 +19,7 @@ import CacheModule from '@infra/cache/cahe.module';
 import { JwtModule } from '@nestjs/jwt';
 import { BcryptModule } from '@core/services/bcrypt/bcrypt.module';
 import { AfiliatesModule } from '@domain/afiliates/afiliates.module';
+import { WithdralModule } from '@domain/withdral/withdral.module';
 import AuthMiddleware from '@core/middlewares/isAuthenticated.middleware';
 import TaskModule from '@infra/shedule/task.module';
 @Module({
@@ -43,6 +43,7 @@ import TaskModule from '@infra/shedule/task.module';
     BcryptModule,
     AfiliatesModule,
     TaskModule,
+    WithdralModule,
   ],
   controllers: [],
   providers: [],
