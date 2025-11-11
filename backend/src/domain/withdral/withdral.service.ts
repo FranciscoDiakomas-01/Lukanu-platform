@@ -44,7 +44,9 @@ export class WithdralService {
       );
     }
     if (user.totalAvaliable < data.amount) {
-      throw new ForbiddenException('Saldo insufficiente');
+      throw new ForbiddenException(
+        `Saldo insufficiente , Seu saldo é de ${user.totalAvaliable.toFixed(2)} kz`,
+      );
     }
 
     const [widthdral] = await this.prisma.$transaction([
@@ -84,6 +86,7 @@ export class WithdralService {
 
     return {
       data: widthdral,
+      message: `Pedido de saque criado`,
     };
   }
   async findAll(userId: number, page: number, limit: number) {
@@ -162,7 +165,7 @@ export class WithdralService {
       lastPage,
     };
   }
-  async update(id: number, status: STATUS) {
+  async update(id: number, status: STATUS, file: string | undefined) {
     const widthTraw = await this.prisma.withdral.findFirst({
       where: {
         id,
@@ -180,6 +183,7 @@ export class WithdralService {
         .update({
           data: {
             status: status == 'ACTIVED' ? 'ACTIVED' : 'DESACTIVED',
+            file,
           },
           where: {
             id,

@@ -47,14 +47,6 @@ export default class EBookClientService {
           },
         }
       );
-      if (!res.ok) {
-        const errorData = await res.json();
-        return {
-          hasError: true,
-          message: errorData.message,
-          lastPage: 1,
-        };
-      }
       const dataResponse = await res.json();
       console.log(dataResponse);
       return {

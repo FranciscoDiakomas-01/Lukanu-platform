@@ -25,6 +25,7 @@ import {
   PiggyBank,
   ShoppingBag,
   ShoppingCart,
+  Users,
   Video,
 } from "lucide-react";
 
@@ -52,6 +53,7 @@ import { UserContext } from "@/context/userContext";
 import type { User } from "@/types/User";
 import clsx from "clsx";
 import UserClientService from "@/service/User";
+import useIsAdmin from "@/hooks/useIsAdmin";
 interface Props {
   whoIs: "seller" | "admin" | "teacher";
   showInput: boolean;
@@ -60,41 +62,50 @@ interface Props {
 
 export default function DashordHeader(prop: Props) {
   const { user } = useContext(UserContext) as { user: User };
+  const { isAdmin } = useIsAdmin();
   const [isDark, setIsDark] = useState(false);
   const adminLinks = [
     {
-      title: "",
-      to: "",
-      icon: "",
+      title: "Inscrições",
+      to: "/seller/courses",
+      icon: <Clapperboard className="transition-all" size={18} />,
+    },
+    {
+      title: "Usuários",
+      to: "/seller/users",
+      icon: <Users className="transition-all" size={18} />,
+    },
+    {
+      title: "Saques",
+      to: "/seller/cacheout",
+      icon: <PiggyBank className="transition-all" size={18} />,
+    },
+    {
+      title: "Perfil",
+      to: "/seller/settings",
+      icon: <Settings className="transition-all" size={18} />,
     },
   ];
   const sellerLinks = [
     {
+      title: "Saques",
+      to: "/seller/cacheout",
+      icon: <PiggyBank className="transition-all" size={18} />,
+    },
+    {
       title: "Afiliações",
-      to: "/seller/afiliates",
-      icon: <BanknoteArrowDownIcon className="transition-all" size={20} />,
-    },
-  ];
-  const teacherLinks = [
-    {
-      title: "Turmas",
-      to: "/teacher",
-      icon: <Video className="transition-all" size={18} />,
+      to: "/seller/aff",
+      icon: <BanknoteArrowDown className="transition-all" size={18} />,
     },
     {
-      title: "Conversas",
-      to: "/teacher/chats",
-      icon: <MessageCircle className="transition-all" size={18} />,
+      title: "Perfil",
+      to: "/seller/settings",
+      icon: <Settings className="transition-all" size={18} />,
     },
   ];
 
   const router = useRouter();
-  const Links =
-    prop.whoIs == "admin"
-      ? adminLinks
-      : prop.whoIs == "seller"
-      ? sellerLinks
-      : teacherLinks;
+  const Links = isAdmin ? adminLinks : sellerLinks;
 
   useEffect(() => {
     const html = document.documentElement;
@@ -125,16 +136,7 @@ export default function DashordHeader(prop: Props) {
   return (
     <header className="w-full sticky top-0 z-40  p-2 lg:justify-between justify-end lg:items-center   gap-4 border-b backdrop-blur-2xl dark:border-white/10  ">
       <div className="flex justify-end items-center gap-3">
-        <Link
-          href={
-            prop.whoIs == "admin"
-              ? "/admin/notifications"
-              : prop.whoIs == "seller"
-              ? "/seller/notifications"
-              : "/teacher/notifications"
-          }
-          prefetch
-        >
+        <Link href={"/seller/notifications"} prefetch>
           <span
             className={clsx(
               "justify-center flex items-center w-8  font-semibold rounded-full  h-8",
@@ -158,8 +160,8 @@ export default function DashordHeader(prop: Props) {
             )}
           </span>
         </Link>
-        <div className="flex gap-3">
-          <Avatar className="md:flex hidden ">
+        <div className="flex">
+          <Avatar>
             <AvatarImage
               src={user?.profileUrl}
               alt={user.firstName + user.lastName}
@@ -175,50 +177,29 @@ export default function DashordHeader(prop: Props) {
           >
             <MenubarMenu>
               <MenubarTrigger className="font-sans  text-start gap-3">
-                <Avatar className="lg:hidden flex">
-                  <AvatarImage
-                    src={user?.profileUrl}
-                    alt={user.firstName + user.lastName}
-                  />
-                  <AvatarFallback className="dark:bg-white bg-[#080808] text-white dark:text-black justify-center flex items-center w-10 uppercase font-semibold">
-                    {user.firstName?.charAt(0) + user.lastName?.charAt(0)}
-                  </AvatarFallback>
-                </Avatar>
-                <ChevronDown size={14} className="dark:text-white" />
-              </MenubarTrigger>
-              <MenubarContent className="bg-transparent dark:text-black border-white/10  backdrop-blur-2xl flex flex-col gap-3 ">
                 <span
-                  className="flex flex-col dark:text-white text-center
+                  className="flex flex-col  dark:text-white 
                 "
                 >
                   <p>{user.firstName + " " + user.lastName}</p>
                   <small className="text-[11px] ">{user.email}</small>
                 </span>
-                <Link href={prop.whoIs + "/settings"}>
-                  <MenubarItem className="flex cursor-pointer">
-                    <Settings size={14} />
-                    Configurações
-                  </MenubarItem>
-                </Link>
-
-                <Link href={"/seller/cacheout"}>
-                  <MenubarItem className="flex cursor-pointer">
-                    <PiggyBank size={14} />
-                    Saques
-                  </MenubarItem>
-                </Link>
+                <ChevronDown size={14} className="dark:text-white" />
+              </MenubarTrigger>
+              <MenubarContent className="bg-transparent dark:text-black border-white/10  backdrop-blur-2xl flex flex-col gap-3 ">
+                {Links.map((item, idx) => (
+                  <Link key={idx} href={item.to}>
+                    <MenubarItem className="flex cursor-pointer">
+                      {item.icon}
+                      {item.title}
+                    </MenubarItem>
+                  </Link>
+                ))}
 
                 <Link href={"https://www.youtube.com/@Lukanu-v"}>
                   <MenubarItem className="flex cursor-pointer">
                     <HelpCircle size={14} />
                     Ajuda
-                  </MenubarItem>
-                </Link>
-
-                <Link href={"/seller/aff"}>
-                  <MenubarItem className="flex cursor-pointer">
-                    <BanknoteArrowDown size={14} />
-                    Afiliações
                   </MenubarItem>
                 </Link>
 
@@ -247,6 +228,7 @@ export default function DashordHeader(prop: Props) {
               </MenubarContent>
             </MenubarMenu>
           </Menubar>
+
           <Menubar
             className="border-none hidden
            md:flex shadow-none bg-transparent"
@@ -263,20 +245,14 @@ export default function DashordHeader(prop: Props) {
                 <ChevronDown size={14} className="dark:text-white" />
               </MenubarTrigger>
               <MenubarContent className="bg-transparent dark:text-white border-white/10 backdrop-blur-2xl ">
-                <Link
-                  href={
-                    prop.whoIs == "admin"
-                      ? "/admin/settings"
-                      : prop.whoIs == "seller"
-                      ? "/seller/settings"
-                      : "/teacher/settings"
-                  }
-                >
-                  <MenubarItem className="flex cursor-pointer">
-                    <Settings size={14} />
-                    Configurações
-                  </MenubarItem>
-                </Link>
+                {Links.map((item, idx) => (
+                  <Link key={idx} href={item.to}>
+                    <MenubarItem className="flex cursor-pointer">
+                      {item.icon}
+                      {item.title}
+                    </MenubarItem>
+                  </Link>
+                ))}
                 <a href={"https://www.youtube.com/@Lukanu-v"}>
                   <MenubarItem className="flex cursor-pointer">
                     <HelpCircle size={14} />

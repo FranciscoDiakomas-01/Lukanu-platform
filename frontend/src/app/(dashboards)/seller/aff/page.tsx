@@ -40,7 +40,9 @@ export default function AfiliationsPage() {
               ))}
             </span>
           ) : (
-            <div></div>
+            <div className="text-center flex justify-center items-center">
+              <h1>Sem afiliações</h1>
+            </div>
           )}
         </article>
       )}

@@ -4,7 +4,6 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
 }
 
 enum ROLE {
@@ -187,6 +186,7 @@ model Withdral {
   id Int @id @default(autoincrement())
   userId Int
   amount Int
+  file String?
   status  STATUS @default(PENDING)
   createdAt  DateTime    @default(now())
   updatedAt  DateTime    @updatedAt

@@ -14,6 +14,7 @@ import {
   Settings,
   ShoppingBag,
   ShoppingCart,
+  Users,
   Video,
 } from "lucide-react";
 import Link from "next/link";
@@ -21,15 +22,42 @@ import { Button } from "../ui/button";
 import { useState } from "react";
 import clsx from "clsx";
 import { useRouter } from "next/navigation";
+import useIsAdmin from "@/hooks/useIsAdmin";
 interface Props {
   whoIs: "seller" | "admin" | "teacher";
 }
 export default function Sidebar(props: Props) {
+  const { isAdmin } = useIsAdmin();
   const adminLinks = [
     {
-      title: "",
-      to: "",
-      icon: "",
+      title: "Livros",
+      to: "/seller",
+      icon: <PackageOpen className="transition-all" size={18} />,
+    },
+    {
+      title: "Cursos",
+      to: "/seller/courses",
+      icon: <Clapperboard className="transition-all" size={18} />,
+    },
+    {
+      title: "Inscrições",
+      to: "/seller/courses",
+      icon: <Clapperboard className="transition-all" size={18} />,
+    },
+    {
+      title: "Usuários",
+      to: "/seller/users",
+      icon: <Users className="transition-all" size={18} />,
+    },
+    {
+      title: "Pagamentos",
+      to: "/seller/payments",
+      icon: <ShoppingCart className="transition-all" size={18} />,
+    },
+    {
+      title: "Saques",
+      to: "/seller/cacheout",
+      icon: <PiggyBank className="transition-all" size={18} />,
     },
   ];
   const sellerLinks = [
@@ -60,13 +88,13 @@ export default function Sidebar(props: Props) {
     },
   ];
   const router = useRouter();
-  const Links = props.whoIs == "admin" ? adminLinks : sellerLinks;
+  const Links = isAdmin ? adminLinks : sellerLinks;
   const [active, setActive] = useState(0);
   return (
     <>
       <nav
         className={clsx(
-          "lg:flex hidden fixed top-0 left-0 flex-col  z-4  gap-5 transition-all p-3 justify-between overflow-hidde bg- h-screen border-r  dark:border-white/10 bg-transparent backdrop-blur-3xl min-w-[13%] max-w-[13%]"
+          "xl:flex hidden fixed top-0 left-0 flex-col  z-4  gap-5 transition-all p-3 justify-between overflow-hidde bg- h-screen border-r  dark:border-white/10 bg-transparent backdrop-blur-3xl min-w-[13%] max-w-[13%]"
         )}
       >
         <div className="flex flex-col gap-1 w-full">
@@ -165,12 +193,10 @@ export default function Sidebar(props: Props) {
           </Button>
         </div>
       </nav>
-
-      <div>
-        <Link href={Links[0].to}>
-          <div className="fixed lg:hidden flex z-[444] top-3.5 cursor-pointer pl-2 hover:animate-none shadow-2xl shadow-blue-500">
-            <Image src={logo} alt="logo" className="h-8 w-8" />
-          </div>
+      <div className=" left-3 top-3 fixed z-99 xl:hidden flex">
+        <Link href={"/seller"} className="flex flex-col relative">
+          <Image src={logo} alt="logo" className="h-8 w-8 z-2" />
+          <span className="bg-white h-5 w-5 top-1 place-self-center z-1 absolute"></span>
         </Link>
       </div>
     </>

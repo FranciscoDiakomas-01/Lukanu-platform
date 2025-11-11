@@ -1,6 +1,15 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { STATUS } from '@prisma/client';
-import { IsEnum, IsInt, IsNotEmpty, IsPositive, Min } from 'class-validator';
+import {
+  IsEnum,
+  IsInt,
+  IsNotEmpty,
+  IsOptional,
+  IsPositive,
+  IsString,
+  IsUrl,
+  Min,
+} from 'class-validator';
 
 export class CreateWithdralDto {
   @ApiProperty()
@@ -18,4 +27,9 @@ export class UpdateWithdralDto {
   @IsEnum(STATUS)
   @IsNotEmpty()
   status: STATUS;
+
+  @IsString()
+  @IsOptional()
+  @IsUrl()
+  file: string;
 }

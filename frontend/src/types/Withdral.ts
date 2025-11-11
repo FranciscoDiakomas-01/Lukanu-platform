@@ -8,6 +8,7 @@ export interface WidthDrwal {
   createdAt: Date;
   updatedAt: Date;
   user: User;
+  file?: string
 }
 
 enum WidthDrawStatus {

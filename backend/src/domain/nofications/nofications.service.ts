@@ -23,7 +23,7 @@ export class NoficationsService {
         take: finalLimit,
         skip,
         orderBy: {
-          createdAt: 'asc',
+          createdAt: 'desc',
         },
       }),
       this.prisma.notification.count({

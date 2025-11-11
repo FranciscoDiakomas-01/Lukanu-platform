@@ -78,7 +78,12 @@ export class PurchaserviceClient {
       };
     }
   }
-  public async updatePayment(id: string, data: any) {
+  public async updatePayment(
+    id: string,
+    data: {
+      status: "PAID" | "CANCELED";
+    }
+  ) {
     try {
       const res = await fetch(`${server}/purchase/${id}`, {
         method: "PATCH",
@@ -88,18 +93,7 @@ export class PurchaserviceClient {
         },
         body: JSON.stringify(data),
       });
-
-      if (!res.ok) {
-        const errorData = await res.json();
-
-        return {
-          hasError: true,
-          message: errorData.message || "Erro ao atualizar pagamento",
-        };
-      }
-
       const dataResponse = await res.json();
-
       return {
         hasError: false,
         message: dataResponse.message,

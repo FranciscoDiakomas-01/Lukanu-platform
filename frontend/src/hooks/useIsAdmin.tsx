@@ -8,8 +8,8 @@ export default function useIsAdmin() {
   useEffect(() => {
     const role = localStorage.getItem("role");
     setRole(role as string);
-    if (role == "REGULAR") {
-      setIsAdmin(false);
+    if (role == "ADMIN") {
+      setIsAdmin(true);
     }
   }, []);
 

@@ -91,6 +91,7 @@ export class CoursesService {
         maxPerPage: constants.max_items_per_page,
         hasNextPage: lastPage > page,
         hasPrevPage: page > 1,
+        lastPage,
       };
     } else {
       const [total, courses] = await this.prisma.$transaction([
@@ -125,6 +126,7 @@ export class CoursesService {
         maxPerPage: constants.max_items_per_page,
         hasNextPage: lastPage > page,
         hasPrevPage: page > 1,
+        lastPage,
       };
     }
   }

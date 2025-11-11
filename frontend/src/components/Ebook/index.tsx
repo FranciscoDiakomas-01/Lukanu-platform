@@ -49,7 +49,7 @@ export function EbookCard({ ebook }: { ebook: CreateEbookDto }) {
       {show ? (
         <figure className="flex flex-col border dark:border-white/10 p-2 gap-4 rounded-sm transition-all hover:shadow-2xl shadow-black/10 dark:shadow-white/10 cursor-pointer relative">
           <img
-            className=" hover:scale-95  transition-all lg:h-50 h-60 rounded-md  object-contain "
+            className=" hover:scale-95  transition-all lg:h-50 h-60 w-full rounded-md object-cover  "
             src={ebook.coverUrl}
             alt={ebook.title}
           />

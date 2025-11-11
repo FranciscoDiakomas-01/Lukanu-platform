@@ -25,6 +25,7 @@ import {
   Loader2,
   ChevronRight,
   ChevronLeft,
+  Download,
 } from "lucide-react";
 import { format } from "date-fns";
 import DashordHeader from "@/components/DashordHeader";
@@ -45,6 +46,7 @@ import { toast } from "sonner";
 import { WidthDrwal } from "@/types/Withdral";
 import useIsAdmin from "@/hooks/useIsAdmin";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import Link from "next/link";
 export default function WithdrawalHistory() {
   const [loading, setLoading] = useState(true);
   const [withdrawals, setWithdrawals] = useState<WidthDrwal[]>([]);
@@ -176,7 +178,7 @@ export default function WithdrawalHistory() {
               <TableHead>Banco</TableHead>
               <TableHead>IBAN</TableHead>
               <TableHead>Data</TableHead>
-              {isAdmin && <TableHead>Acções</TableHead>}
+              <TableHead>{isAdmin ? "Acções" : "Comprovativo"}</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -272,16 +274,51 @@ export default function WithdrawalHistory() {
                       {withdrawal.user?.iban ?? "..."}
                     </TableCell>
                     <TableCell className="text-sm">
-                      {format(withdrawal.createdAt, "dd/MM/yyyy HH:mm")}
+                      <h1>
+                        {new Date(withdrawal.createdAt).toLocaleTimeString(
+                          "pt",
+                          {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          }
+                        )}
+                      </h1>
+
+                      <span>
+                        {new Date(withdrawal.createdAt).toLocaleDateString(
+                          "pt",
+                          {
+                            weekday: "long",
+                            day: "2-digit", // 22
+                            month: "long", // novembro
+                            year: "numeric", // 2025
+                          }
+                        )}
+                      </span>
                     </TableCell>
+
                     <TableCell>
-                      {withdrawal.status == "PENDING" ? (
+                      {isAdmin ? (
                         <span>
-                          <Button>Aprovar</Button>
-                          <Button>Reprovar</Button>
+                          <Button disabled={withdrawal.status != "PENDING"}>
+                            Aprovar
+                          </Button>
+                          <Button disabled={withdrawal.status != "PENDING"}>
+                            Reprovar
+                          </Button>
                         </span>
                       ) : (
-                        <small>Sem acções</small>
+                        <>
+                          {withdrawal.status == "ACTIVED" && withdrawal.file ? (
+                            <Button asChild>
+                              <Link href={withdrawal.file}>
+                                <Download /> Baixar
+                              </Link>
+                            </Button>
+                          ) : (
+                            <span>Sem acção</span>
+                          )}
+                        </>
                       )}
                     </TableCell>
                   </TableRow>

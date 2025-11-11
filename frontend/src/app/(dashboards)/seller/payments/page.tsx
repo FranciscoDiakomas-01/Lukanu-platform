@@ -4,13 +4,12 @@ import { useEffect, useState } from "react";
 import DashordHeader from "../../../../components/DashordHeader";
 import {
   AlertCircle,
+  Check,
   CheckCircle,
   ChevronLeft,
-  Coins,
-  DollarSign,
   Download,
-  HandCoinsIcon,
   Loader2,
+  X,
 } from "lucide-react";
 
 import {
@@ -18,27 +17,14 @@ import {
   TableBody,
   TableCaption,
   TableCell,
-  TableFooter,
   TableHead,
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Copy, ChevronRight } from "lucide-react";
+import { ChevronRight } from "lucide-react";
 import Stats from "@/components/Stats";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { useRouter } from "next/navigation";
 import { Avatar } from "@radix-ui/react-avatar";
@@ -46,10 +32,12 @@ import { AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Payments } from "@/types/Payments";
 import { PurchaserviceClient } from "@/service/Payments";
 import { User } from "@/types/User";
+import useIsAdmin from "@/hooks/useIsAdmin";
 
 export default function PaymentsComponents() {
   const [payments, setPayments] = useState([]);
   const [iban, setIban] = useState("");
+  const { isAdmin, role } = useIsAdmin();
   const [load, setIsLoad] = useState(true);
   const myCoins = 10000;
   const [data, setData] = useState<Payments[]>([]);
@@ -57,6 +45,8 @@ export default function PaymentsComponents() {
   const [page, setPage] = useState(1);
   const [lastPage, setLasPage] = useState(1);
   const [userId, setUserId] = useState(0);
+  const [current, setCurrent] = useState(0);
+  const [reload, setReload] = useState(false);
   useEffect(() => {
     const token = localStorage.getItem("acess");
     if (!token) {
@@ -100,26 +90,7 @@ export default function PaymentsComponents() {
     return () => {
       clearInterval(interval);
     };
-  }, [page]);
-
-  const handleSaque = () => {
-    if (!iban) {
-      toast.error("IBAN obrigatório", {
-        description: "Por favor, insira um IBAN válido antes de continuar.",
-      });
-      return;
-    }
-
-    if (myCoins < 50000) {
-      toast.info("Saldo insuficiente", {
-        description: "Você precisa de pelo menos 50.000,00 Kz para sacar.",
-      });
-      return;
-    }
-    toast.success("Pedido de saque enviado", {
-      description: `O valor será enviado para o IBAN: ${iban}`,
-    });
-  };
+  }, [page, reload]);
 
   return (
     <main className="w-full pb-20  flex-col min-h-screen flex gap-8">
@@ -136,7 +107,6 @@ export default function PaymentsComponents() {
               <Stats prop={stats} key={index} />
             ))}
           </div>
-       
           <>
             {Array.isArray(data) && data.length > 0 ? (
               <>
@@ -144,12 +114,13 @@ export default function PaymentsComponents() {
                   <TableCaption>Vendas recentes</TableCaption>
                   <TableHeader>
                     <TableRow>
+                      <TableHead>ID</TableHead>
                       <TableHead>Status</TableHead>
                       <TableHead>Cliente</TableHead>
+                      {isAdmin && <TableHead>Vendedor</TableHead>}
                       <TableHead>Livro</TableHead>
                       <TableHead>Tipo</TableHead>
                       <TableHead>Valor</TableHead>
-                      <TableHead>Pago</TableHead>
                       <TableHead>Data</TableHead>
                       <TableHead>Comprovativo</TableHead>
                       <TableHead>Ações</TableHead>
@@ -158,6 +129,7 @@ export default function PaymentsComponents() {
                   <TableBody>
                     {data.map((p, i) => (
                       <TableRow key={i}>
+                        <TableCell className="pl-4">{p.id}</TableCell>
                         <TableCell>
                           <Badge variant="outline">
                             {p.status == "PAID" ? (
@@ -215,6 +187,27 @@ export default function PaymentsComponents() {
                             })()}
                           </div>
                         </TableCell>
+                        {isAdmin && (
+                          <TableCell>
+                            <div className="flex flex-col">
+                              <Avatar className="w-10 h-10">
+                                <AvatarImage
+                                  src={p.owner.profileUrl}
+                                  alt={`@${p.owner.lastName}`}
+                                  className="h-10 rounded-full"
+                                />
+                                <AvatarFallback className="uppercase">
+                                  {p.owner.firstName?.charAt(0)}{" "}
+                                  {p.owner.lastName?.charAt(0)}
+                                </AvatarFallback>
+                              </Avatar>
+                              <span>
+                                {p.owner.firstName} {p.owner.lastName}
+                              </span>
+                              <small>{p.owner.email}</small>
+                            </div>
+                          </TableCell>
+                        )}
 
                         <TableCell>
                           <div className="flex flex-col">
@@ -237,12 +230,23 @@ export default function PaymentsComponents() {
                         </TableCell>
 
                         <TableCell>{p.price.toLocaleString("pt")} Kz</TableCell>
-                        <TableCell>{p.payed.toLocaleString("pt")} Kz</TableCell>
 
                         <TableCell>
-                          {new Date(p.createdAt).toLocaleTimeString("pt") +
-                            " : " +
-                            new Date(p.createdAt).toLocaleDateString("pt")}{" "}
+                          <h1>
+                            {new Date(p.createdAt).toLocaleTimeString("pt", {
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            })}
+                          </h1>
+
+                          <span>
+                            {new Date(p.createdAt).toLocaleDateString("pt", {
+                              weekday: "long", // terça-feira
+                              day: "2-digit", // 22
+                              month: "long", // novembro
+                              year: "numeric", // 2025
+                            })}
+                          </span>
                         </TableCell>
                         <TableCell>
                           <Button asChild variant={"secondary"}>
@@ -252,7 +256,7 @@ export default function PaymentsComponents() {
                           </Button>
                         </TableCell>
 
-                        {p.status == "PAID" && p.owner.id == userId ? (
+                        {p.status == "PAID" && p.buyerId == userId ? (
                           <TableCell>
                             <Button asChild>
                               <a
@@ -265,9 +269,87 @@ export default function PaymentsComponents() {
                             </Button>
                           </TableCell>
                         ) : (
-                          <TableCell className="text-sm text-muted">
-                            Sem acções
-                          </TableCell>
+                          <>
+                            {isAdmin ? (
+                              <TableCell className="text-sm ">
+                                <span className=" grid grid-cols-2 gap-2">
+                                  <Button
+                                    disabled={p.status != "PENDING"}
+                                    onClick={async () => {
+                                      setCurrent(p.id);
+                                      const token = localStorage.getItem(
+                                        "acess"
+                                      ) as string;
+                                      if (!token) {
+                                        localStorage.clear();
+                                        router.push("/enter");
+                                        return;
+                                      }
+                                      const response =
+                                        await new PurchaserviceClient(
+                                          token as string
+                                        ).updatePayment(String(p.id), {
+                                          status: "PAID",
+                                        });
+                                      toast.info(response.message);
+                                      setReload((prev) => !prev);
+                                      setTimeout(() => {
+                                        setCurrent(0);
+                                      }, 2000);
+                                    }}
+                                  >
+                                    {current == p.id ? (
+                                      <Loader2 className="animate-spin" />
+                                    ) : (
+                                      <>
+                                        <Check />
+                                        Aprovar
+                                      </>
+                                    )}
+                                  </Button>
+                                  <Button
+                                    disabled={p.status != "PENDING"}
+                                    variant={"outline"}
+                                    onClick={async () => {
+                                      setCurrent(p.id);
+                                      const token = localStorage.getItem(
+                                        "acess"
+                                      ) as string;
+                                      if (!token) {
+                                        localStorage.clear();
+                                        router.push("/enter");
+                                        return;
+                                      }
+                                      const response =
+                                        await new PurchaserviceClient(
+                                          token as string
+                                        ).updatePayment(String(p.id), {
+                                          status: "CANCELED",
+                                        });
+                                      toast.info(response.message);
+                                      setReload((prev) => !prev);
+                                      setTimeout(() => {
+                                        setCurrent(0);
+                                      }, 2000);
+                                    }}
+                                  >
+                                    {current == p.id ? (
+                                      <Loader2 className="animate-spin" />
+                                    ) : (
+                                      <>
+                                        <X />
+                                        Reprovar
+                                      </>
+                                    )}
+                                  </Button>
+                                </span>
+                              </TableCell>
+                            ) : (
+                              <TableCell className="text-sm text-muted">
+                                Sem acções
+                              </TableCell>
+                            )}
+                          </>
                         )}
                       </TableRow>
                     ))}

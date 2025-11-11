@@ -65,8 +65,8 @@ export default function DashBoardLayout({ children, whoIs }: LayoutProp) {
         theme={theme == "dark" ? "dark" : "light"}
       />
       <Sidebar whoIs={whoIs} />
-      <section className="lg:w-[87%] w-full pb-20 lg:pb-0">{children}</section>
-      <nav className="z-9999 bg-transparent backdrop-blur-3xl border border-t-white/10 py-3 px-5 flex gap-1 fixed bottom-0 w-full lg:hidden ">
+      <section className="xl:w-[87%] w-full pb-20 lg:pb-0">{children}</section>
+      <nav className="z-9999 bg-transparent backdrop-blur-3xl border border-t-white/10 py-3 px-5 flex gap-1 fixed bottom-0 w-full xl:hidden ">
         {Links.map((item, index) => (
           <Link
             className={clsx(

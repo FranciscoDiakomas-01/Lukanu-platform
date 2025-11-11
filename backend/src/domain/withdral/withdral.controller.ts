@@ -53,6 +53,6 @@ export class WithdralController {
     @Param('id') id: string,
     @Body() updateWithdralDto: UpdateWithdralDto,
   ) {
-    return this.withdralService.update(+id, updateWithdralDto.status);
+    return this.withdralService.update(+id, updateWithdralDto.status , updateWithdralDto.file);
   }
 }

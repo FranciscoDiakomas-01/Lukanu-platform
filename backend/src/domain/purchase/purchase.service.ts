@@ -48,8 +48,7 @@ export class PurchaseService {
           },
         }),
       ]);
-    
-    console.log(isAProduct , isAUser , isAnBuyer)
+
     if (!isAProduct) {
       throw new NotFoundException('Produto não encontrado');
     }
@@ -118,7 +117,7 @@ export class PurchaseService {
     };
   }
   async findAll(userId: number, page: number, limit: number) {
-    page = Number.isNaN(page) ? page : 1;
+    page = Number.isNaN(page) ? 1 : page;
     const finalLimit =
       limit > constants.max_items_per_page || limit <= 0
         ? constants.max_items_per_page
@@ -139,58 +138,41 @@ export class PurchaseService {
     const [purchases, totalPurchases, totalPurchase] = await Promise.all([
       this.prisma.purschase.findMany({
         where:
-          isUser?.role == 'ADMIN'
+          isUser?.role === 'ADMIN'
             ? {}
             : {
-                OR: [
-                  {
-                    ownerId: userId,
-                  },
-                  {
-                    buyerId: userId,
-                  },
-                ],
+                OR: [{ ownerId: userId }, { buyerId: userId }],
               },
         take: finalLimit,
         skip,
         include: {
           ebook: true,
-          owner: {
-            omit: {
-              password: true,
-            },
-          },
+          owner: { select: { id: true, firstName: true, email: true } },
         },
       }),
       this.prisma.purschase.count({
         where:
-          isUser?.role == 'ADMIN'
-            ? {}
+          isUser?.role === 'ADMIN'
+            ? { status: 'PAID' }
             : {
-                OR: [
-                  {
-                    ownerId: userId,
-                  },
-                  {
-                    buyerId: userId,
-                  },
-                ],
+                status: 'PAID',
+                OR: [{ ownerId: userId }, { buyerId: userId }],
               },
       }),
+
       this.prisma.purschase.aggregate({
-        _count: {
-          payed: true,
-          price: true,
-        },
+        _count: { id: true },
+        _sum: { price: true, payed: true },
         where:
-          isUser?.role == 'ADMIN'
-            ? {}
+          isUser?.role === 'ADMIN'
+            ? { status: 'PAID' }
             : {
-                ownerId: userId,
-                status: 'PENDING',
+                status: 'PAID',
+                OR: [{ ownerId: userId }, { buyerId: userId }],
               },
       }),
     ]);
+
     const lastPage = Math.ceil(totalPurchases / finalLimit);
     return {
       data: purchases,
@@ -207,14 +189,22 @@ export class PurchaseService {
               {
                 title: 'Total Vendas',
                 description: 'Total facturado na plaforma',
-                value: totalPurchase._count.payed,
+                value: totalPurchase._sum.price,
                 isCoin: true,
               },
               {
                 title: 'Saldo',
-                description: 'Valor disponível para saque',
-                value: this.getPlatFormercent(totalPurchase._count.payed),
+                description: 'Lucros da plataforma',
+                value:
+                  Number(totalPurchase._sum.price) -
+                  Number(totalPurchase._sum.payed),
                 isCoin: true,
+              },
+              {
+                title: 'Número de vendas',
+                description: 'Vendas realizadas',
+                value: totalPurchase._count.id,
+                isCoin: false,
               },
             ]
           : [
@@ -229,12 +219,6 @@ export class PurchaseService {
                 description: 'Valor disponível para saque',
                 value: isUser.totalAvaliable,
                 isCoin: true,
-              },
-              {
-                title: 'Vendas Pendentes',
-                description: 'Total de livros criados por mim',
-                value: totalPurchase._count.price,
-                isCoin: false,
               },
               {
                 title: 'Livros',
@@ -395,6 +379,7 @@ export class PurchaseService {
         ]);
         return {
           sucess: true,
+          message: `Pagamento ${data.status == 'PAID' ? 'aprovado' : 'reprovado'} com sucesso!`,
         };
       } else {
         const amount = this.getPlatFormercent(payment.ebook.currentPrice);
@@ -440,6 +425,7 @@ export class PurchaseService {
         ]);
         return {
           sucess: true,
+          message: `Pagamento ${data.status == 'PAID' ? 'aprovado' : 'reprovado'} com sucesso!`,
         };
       }
     } else {
@@ -482,6 +468,7 @@ export class PurchaseService {
       ]);
       return {
         sucess: true,
+        message: `Pagamento  reprovado com sucesso!`,
       };
     }
   }

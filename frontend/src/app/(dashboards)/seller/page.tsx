@@ -1,6 +1,6 @@
 "use client";
-import Autoplay from "embla-carousel-autoplay";
 
+import Autoplay from "embla-carousel-autoplay";
 import {
   Carousel,
   CarouselContent,
@@ -16,24 +16,22 @@ import card2 from "@/assets/carousel2.png";
 import card3 from "@/assets/carousel3.png";
 import Image from "next/image";
 import { Input } from "@/components/ui/input";
-import {
-  ChevronLeft,
-  ChevronRight,
-  Filter,
-  Loader,
-  Loader2Icon,
-  Search,
-} from "lucide-react";
+import { ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import TextType from "@/components/animated/Typing";
-import Ebook from "@/types/ebook";
 import { EbookCard, EbookCardSkeleton } from "@/components/Ebook";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import MyEbooks from "./myEbooks.table";
 import EBookClientService from "@/service/Ebook";
 import { toast } from "sonner";
 import { CreateEbookDto } from "@/types/CreateEbook";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+
 export default function Home() {
   const plugin = useRef(
     Autoplay({
@@ -41,6 +39,7 @@ export default function Home() {
       stopOnInteraction: true,
     })
   );
+
   const cards = [
     {
       text: "Descobre ebooks incríveis de autores angolanos",
@@ -73,19 +72,28 @@ export default function Home() {
       img: card1,
     },
   ];
+
   const router = useRouter();
-  const [ebooks, setEboks] = useState<CreateEbookDto[]>([]);
+
+  const [ebooks, setEbooks] = useState<CreateEbookDto[]>([]);
   const [isLoad, setIsLoad] = useState(true);
-  const [showMyEbooks, setShowMyEbooks] = useState(false);
   const [page, setPage] = useState(1);
   const [lastPage, setLastPage] = useState(0);
   const [search, setSearch] = useState("");
+  const [filterType, setFilterType] = useState<"all" | "meus" | "pambalaveis">(
+    "all"
+  );
+
   const filtered = ebooks.filter((ebook) => {
     const term = search.toLowerCase();
-    if (showMyEbooks && !ebook.belongeMe) return false;
-    if (!term) return true;
-
     const isNumber = !isNaN(Number(term));
+    if (filterType === "meus" && !ebook.belongeMe) return false;
+    if (
+      filterType === "pambalaveis" &&
+      !(ebook.isShared && Number(ebook.sharePercent) > 0)
+    )
+      return false;
+    if (!term) return true;
 
     return (
       ebook.title.toLowerCase().includes(term) ||
@@ -100,56 +108,46 @@ export default function Home() {
       const token = localStorage.getItem("acess") as string;
       const service = new EBookClientService(token);
       const data = await service.getMyEbooks(page);
-      console.log(data);
+
       if (data?.hasError) {
-        setEboks([]);
+        setEbooks([]);
         setLastPage(1);
         toast.warning("Erro ao consultar os livros");
         return;
-      } else {
-        if (page == 1) {
-          setEboks(data.data);
-        } else {
-          const responseData = [...data.data] as CreateEbookDto[];
-
-          setEboks((prev) => [...prev, ...responseData]);
-        }
-        setLastPage(data.lastPage);
       }
+
+      if (page === 1) {
+        setEbooks(data.data);
+      } else {
+        setEbooks((prev) => [...prev, ...data.data]);
+      }
+
+      setLastPage(data.lastPage);
     }
+
     getEbooks()
-      .then((e) => {})
-      .catch()
+      .catch(() => {})
       .finally(() => {
-        setTimeout(() => {
-          setIsLoad(false);
-        }, 1000);
+        setTimeout(() => setIsLoad(false), 1000);
       });
   }, [page]);
 
-  useEffect(() => {
-    if (!search) {
-      setEboks((prev) => prev);
-      return;
-    } else {
-    }
-  }, [search, page]);
-
   return (
-    <section className="w-full pb-20  flex-col min-h-screen flex gap-4">
+    <section className="w-full pb-20 flex-col min-h-screen flex gap-4">
       <DashordHeader whoIs="seller" showInput={false} />
-      <article className="flex justify-between gap-6 px-2  w-full ">
+
+      <article className="flex justify-between gap-6 px-2 w-full">
         <Carousel
           plugins={[plugin.current]}
-          className="w-full relative  rounded-md "
+          className="w-full relative rounded-md"
           onMouseEnter={plugin.current.stop}
           onMouseLeave={plugin.current.reset}
         >
-          <CarouselContent className="md:h-[350px] h-[200px] rounded-md ">
+          <CarouselContent className="md:h-[350px] h-[200px] rounded-md">
             {cards.map((item, index) => (
               <CarouselItem key={index}>
                 <div
-                  className={` px-4 flex  relative   rounded-md h-full border dark:border-white/10 dark:bg-transparent bg-blue-600`}
+                  className={`px-4 flex relative rounded-md h-full border dark:border-white/10 dark:bg-transparent bg-blue-600`}
                 >
                   <svg
                     className="absolute inset-0 w-full h-full"
@@ -193,9 +191,9 @@ export default function Home() {
                     <h1 className="max-w-[50%] text-white dark:text-white lg:pt-12 pt-4 lg:text-5xl md:text-4xl font-bold leading-[1.4] text-2xl">
                       {item.text}
                     </h1>
-                    <div className="flex lg:items-end lg:justify-end h-full  justify-start items-start ">
+                    <div className="flex lg:items-end lg:justify-end h-full justify-start items-start">
                       <Image
-                        className="object-contain md:h-full  h-[200px] "
+                        className="object-contain md:h-full h-[200px]"
                         src={item.img}
                         alt={item.text}
                       />
@@ -206,15 +204,16 @@ export default function Home() {
             ))}
           </CarouselContent>
 
-          <div className="absolute  bg-red-50 bottom-0 right-[50%] z-2  lg:h-20">
+          <div className="absolute bg-red-50 bottom-0 right-[50%] z-2 lg:h-20">
             <CarouselPrevious className="dark:bg-transparent dark:border-white dark:text-white" />
             <CarouselNext className="dark:bg-transparent dark:border-white dark:text-white" />
           </div>
         </Carousel>
       </article>
+
       <aside className="flex pt-10 w-full flex-col gap-8 min-h-screen px-4">
-        <div className="flex justify-center w-full gap-4 ">
-          <form action="" className="lg:w-[30%] w-full relative">
+        <div className="flex justify-center w-full gap-4">
+          <form className="lg:w-[30%] w-full relative">
             <Input
               className="w-full h-11"
               placeholder="Buscar por livro"
@@ -222,59 +221,62 @@ export default function Home() {
               onChange={(e) => setSearch(e.target.value)}
             />
 
-            <Button
-              type="button"
-              onClick={() => {
-                setShowMyEbooks((prev) => !prev);
-              }}
-              size="sm"
-              variant={showMyEbooks ? "default" : "outline"}
-              className="absolute top-1.5 right-1.5"
-            >
-              <Filter />
-            </Button>
+            <span className="absolute top-1 right-0">
+              <Select
+                onValueChange={(value) => {
+                  setFilterType(value as any);
+                  setSearch("");
+                }}
+              >
+                <SelectTrigger className="md:w-[130px] w-[100px] border-none">
+                  <SelectValue placeholder="Filtrar" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos</SelectItem>
+                  <SelectItem value="meus">Meus</SelectItem>
+                  <SelectItem value="pambalaveis">Pambaláveis</SelectItem>
+                </SelectContent>
+              </Select>
+            </span>
           </form>
           <Button asChild>
             <Link href="/seller/ebook">Novo</Link>
           </Button>
         </div>
 
-        <>
-          {isLoad ? (
-            <aside className="grid lg:grid-cols-4 md:grid-cols-2 sm:grid-cols-1 grid-cols-1 gap-6 mt-8">
-              {[1, 2, 3, 4, 5, 6].map((_, index) => (
-                <EbookCardSkeleton key={index} />
-              ))}
-            </aside>
-          ) : (
-            <>
-              {Array.isArray(filtered) && filtered.length > 0 && (
-                <>
-                  <aside className="grid lg:grid-cols-4 md:grid-cols-2 sm:grid-cols-1 grid-cols-1 gap-6 mt-8">
-                    {filtered.map((item, index) => (
-                      <EbookCard ebook={item} key={index} />
-                    ))}
-                  </aside>
+        {isLoad ? (
+          <aside className="grid xl:grid-cols-4 lg:grid-cols-3 md:grid-cols-2 sm:grid-cols-1 grid-cols-1 gap-6 mt-8">
+            {[1, 2, 3, 4, 5, 6].map((_, index) => (
+              <EbookCardSkeleton key={index} />
+            ))}
+          </aside>
+        ) : (
+          <>
+            {filtered.length > 0 ? (
+              <>
+                <aside className="grid xl:grid-cols-4 lg:grid-cols-3 md:grid-cols-2 sm:grid-cols-1 grid-cols-1 gap-6 mt-8">
+                  {filtered.map((item) => (
+                    <EbookCard ebook={item} key={item.id} />
+                  ))}
+                </aside>
 
-                  <span className="flex items-center justify-between">
-                    <span>{page + " de " + lastPage}</span>
-                    <Button
-                      variant="outline"
-                      disabled={page === lastPage}
-                      onClick={() => setPage(page + 1)}
-                    >
-                      Ver Mais <ChevronRight />
-                    </Button>
-                  </span>
-                </>
-              )}
-            </>
-          )}
-        </>
-        {filtered.length == 0 && (
-          <p className="text-center mt-8">
-            Nenhum livro foi publicaddo <br /> Seje o primeiro a publicar{" "}
-          </p>
+                <span className="flex items-center justify-between">
+                  <span>{page + " de " + lastPage}</span>
+                  <Button
+                    variant="outline"
+                    disabled={page === lastPage}
+                    onClick={() => setPage(page + 1)}
+                  >
+                    Ver Mais <ChevronRight />
+                  </Button>
+                </span>
+              </>
+            ) : (
+              <p className="text-center mt-8">
+                Nenhum livro foi publicado <br /> Seja o primeiro a publicar
+              </p>
+            )}
+          </>
         )}
       </aside>
     </section>
