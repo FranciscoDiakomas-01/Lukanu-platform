@@ -2,6 +2,7 @@
 import logo from "@/assets/logo.png";
 import Image from "next/image";
 import {
+  BanknoteArrowDown,
   Clapperboard,
   Gem,
   HelpCircle,
@@ -57,26 +58,14 @@ export default function Sidebar(props: Props) {
       to: "/seller/buys",
       icon: <ShoppingBag className="transition-all" size={18} />,
     },
-  ];
-  const teacherLinks = [
     {
-      title: "Turmas",
-      to: "/teacher",
-      icon: <Video className="transition-all" size={18} />,
-    },
-    {
-      title: "Conversas",
-      to: "/teacher/chats",
-      icon: <MessageCircle className="transition-all" size={18} />,
+      title: "Afiliações",
+      to: "/seller/buys",
+      icon: <BanknoteArrowDown className="transition-all" size={18} />,
     },
   ];
   const router = useRouter();
-  const Links =
-    props.whoIs == "admin"
-      ? adminLinks
-      : props.whoIs == "seller"
-      ? sellerLinks
-      : teacherLinks;
+  const Links = props.whoIs == "admin" ? adminLinks : sellerLinks;
   const [active, setActive] = useState(0);
   return (
     <>

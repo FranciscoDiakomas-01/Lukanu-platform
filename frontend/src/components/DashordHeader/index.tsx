@@ -195,28 +195,7 @@ export default function DashordHeader(prop: Props) {
                 <ChevronDown size={14} className="dark:text-white" />
               </MenubarTrigger>
               <MenubarContent className="bg-transparent dark:text-black border-white/10 backdrop-blur-2xl flex flex-col gap-3 ">
-                {Links.map((item, index) => (
-                  <Link
-                    className="flex w-full cursor-pointer"
-                    key={index}
-                    href={item.to}
-                  >
-                    <MenubarItem className="flex w-full items-center gap-2">
-                      {item.icon}
-                      {item.title}
-                    </MenubarItem>
-                  </Link>
-                ))}
-
-                <Link
-                  href={
-                    prop.whoIs == "admin"
-                      ? "/admin/settings"
-                      : prop.whoIs == "seller"
-                      ? "/seller/settings"
-                      : "/teacher/settings"
-                  }
-                >
+                <Link href={prop.whoIs + "/settings"}>
                   <MenubarItem className="flex cursor-pointer">
                     <Settings size={14} />
                     Configurações
