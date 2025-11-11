@@ -4,7 +4,13 @@ import Image from "next/image";
 import { Button } from "../ui/button";
 import { useEffect } from "react";
 import ShinyText from "../animated/ShineText/indext";
-import { DollarSign, FileText, LucideLayoutGrid, ShoppingCart } from "lucide-react";
+import {
+  DollarSign,
+  FileText,
+  LucideLayoutGrid,
+  ShoppingCart,
+  View,
+} from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -17,7 +23,7 @@ export function EbookCard({ ebook }: { ebook: Ebook }) {
   return (
     <figure className="flex border dark:border-white/10 p-2 gap-4 rounded-sm transition-all hover:shadow-2xl shadow-black/10 dark:shadow-white/10 cursor-pointer">
       <Image
-        className="max-h-[160px] hover:scale-[1.2] transition-all   w-[100px] object-contain"
+        className=" hover:-rotate-16 transition-all   w-[100px] object-contain"
         src={ebook.cover}
         alt={ebook.title}
       />
@@ -55,10 +61,14 @@ export function EbookCard({ ebook }: { ebook: Ebook }) {
             <h1>{Number(ebook.oldPrice).toLocaleString("pt")} kz</h1>
           </div>
         </div>
-        <div className="flex justify-end gap-3">
+        <div className="grid grid-cols-2 gap-3 w-full ">
+          <Button variant={"outline"}>
+            <ShoppingCart />
+            Comprar
+          </Button>
           <Button asChild>
             <Link href={`/seller/ebook/${ebook.id}`}>
-              <ShoppingCart />
+              <View />
               Detalhes
             </Link>
           </Button>
