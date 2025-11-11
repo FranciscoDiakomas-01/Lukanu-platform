@@ -81,7 +81,7 @@ export default function DashBoardLayout({ children, whoIs }: LayoutProp) {
     <main className="flex flex-col lg:items-end">
       <Sidebar whoIs={whoIs} />
       <section className="lg:w-[87%] w-full">{children}</section>
-      <nav className="z-[99999] bg-transparent backdrop-blur-3xl border border-t-white/10 py-3 px-1 flex gap-1 fixed bottom-0 w-full">
+      <nav className="z-[99999] bg-transparent backdrop-blur-3xl border border-t-white/10 py-3 px-1 flex gap-1 fixed bottom-0 w-full lg:hidden ">
         {Links.map((item, index) => (
           <Link
             className="flex w-full  flex-col cursor-pointer gap-1 justify-center items-center"
