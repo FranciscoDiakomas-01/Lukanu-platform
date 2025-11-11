@@ -89,7 +89,7 @@ export default function DashBoardLayout({ children, whoIs }: LayoutProp) {
             href={item.to}
           >
             {item.icon}
-            <small className="text-sm">{item.title}</small>
+            <small className="text-sm md:flex hidden">{item.title}</small>
           </Link>
         ))}
       </nav>
