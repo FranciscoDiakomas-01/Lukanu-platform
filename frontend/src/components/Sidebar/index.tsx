@@ -55,7 +55,7 @@ export default function Sidebar(props: Props) {
     },
     {
       title: "Afiliações",
-      to: "/seller/buys",
+      to: "/seller/aff",
       icon: <BanknoteArrowDown className="transition-all" size={18} />,
     },
   ];

@@ -81,6 +81,7 @@ export default function UserContextComponent({
         })
         .catch((err) => {
           router.push("/enter");
+          localStorage.clear()
           toast.error("Consulte a sua internet");
         })
         .finally(() => {

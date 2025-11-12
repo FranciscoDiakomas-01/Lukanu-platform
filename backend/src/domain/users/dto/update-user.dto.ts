@@ -13,24 +13,10 @@ import {
 
 export class UpdateUserDto {
   @ApiProperty()
-  @IsString({
-    message: 'link da imagem inválido',
-  })
-  @IsOptional({
-    message: 'link da imagem inválido',
-  })
-  @IsUrl(undefined, {
-    message: 'link da imagem inválido',
-  })
-  profileUrl: string;
-  @ApiProperty()
-  @IsOptional({
+  @IsNotEmpty({
     message: 'Iban inválido',
   })
   @IsString({
-    message: 'Iban inválido',
-  })
-  @IsIBAN({
     message: 'Iban inválido',
   })
   iban: string;
@@ -73,14 +59,6 @@ export class UpdateUserDto {
   })
   @IsNotEmpty({ message: 'Email inválido' })
   email: string;
-  @ApiProperty()
-  @IsPhoneNumber('AO', {
-    message: 'Telefone inválido',
-  })
-  @IsNotEmpty({
-    message: 'Telefone inválido',
-  })
-  phone: string;
 }
 
 export class UpdateUserPassword {
@@ -102,5 +80,5 @@ export class UpdateUserPassword {
   @IsStrongPassword(undefined, {
     message: 'Nova Senha muito fraca',
   })
-  newPassWord;
+  newPassWord: string;
 }

@@ -83,6 +83,9 @@ export class UsersService {
         },
       });
       await this.cache.set(`userProfile${id}`, updatedProfile, 500000);
+      return {
+        message: 'Perfil actualizado',
+      };
     } catch (error) {
       throw new BadRequestException('Erro ao actualizar o perfil');
     }
@@ -101,23 +104,14 @@ export class UsersService {
       this.bcrypt.compare(data.odlPassword, user.password),
     ]);
     if (isMyPasword) {
+      console.log(newPassword, isMyPasword);
       await Promise.all([
-        this.prisma.notification.create({
-          data: {
-            userId: id,
-            message: 'Sua senha foi alterada',
-            title: 'Redfinição de senha',
-          },
-        }),
         this.prisma.user.update({
           where: {
             id,
           },
           data: {
             password: newPassword,
-            totalUnreadNotification: {
-              increment: 1,
-            },
           },
         }),
       ]);

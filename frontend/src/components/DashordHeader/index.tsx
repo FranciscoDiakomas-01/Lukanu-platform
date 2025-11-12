@@ -15,6 +15,7 @@ import {
   MenubarTrigger,
 } from "@/components/ui/menubar";
 import {
+  BanknoteArrowDown,
   BanknoteArrowDownIcon,
   Clapperboard,
   Gem,
@@ -207,12 +208,19 @@ export default function DashordHeader(prop: Props) {
                   </MenubarItem>
                 </Link>
 
-                <a href={"https://www.youtube.com/@Lukanu-v"}>
+                <Link href={"https://www.youtube.com/@Lukanu-v"}>
                   <MenubarItem className="flex cursor-pointer">
                     <HelpCircle size={14} />
                     Ajuda
                   </MenubarItem>
-                </a>
+                </Link>
+
+                <Link href={"/seller/aff"}>
+                  <MenubarItem className="flex cursor-pointer">
+                    <BanknoteArrowDown size={14} />
+                    Afiliações
+                  </MenubarItem>
+                </Link>
 
                 <div className="flex px-2 my-2 items-center space-x-2">
                   <Switch

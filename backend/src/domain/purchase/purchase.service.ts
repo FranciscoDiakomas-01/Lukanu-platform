@@ -48,6 +48,8 @@ export class PurchaseService {
           },
         }),
       ]);
+    
+    console.log(isAProduct , isAUser , isAnBuyer)
     if (!isAProduct) {
       throw new NotFoundException('Produto não encontrado');
     }

@@ -2,7 +2,7 @@
 import Ebook from "@/types/ebook";
 import Image from "next/image";
 import { Button } from "../ui/button";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useTransition } from "react";
 import ShinyText from "../animated/ShineText/indext";
 import {
   Coins,
@@ -11,6 +11,7 @@ import {
   EllipsisVertical,
   FileText,
   Forward,
+  Loader2,
   LucideLayoutGrid,
   Menu,
   Share,
@@ -41,6 +42,8 @@ export function EbookCard({ ebook }: { ebook: CreateEbookDto }) {
     router.prefetch(`/seller/ebook?ebook=${ebook.id}`);
     setToken(localStorage.getItem("acess") as string);
   }, [router]);
+
+  const [isPending, startTrantition] = useTransition();
   return (
     <>
       {show ? (
@@ -161,15 +164,31 @@ export function EbookCard({ ebook }: { ebook: CreateEbookDto }) {
             {!ebook.belongeMe && (
               <div className="grid grid-cols-2 gap-3  w-full ">
                 <Button className="w-full" asChild>
-                  <Link href={`/checkout/${ebook.id}`}>
+                  <Link href={`/checkout/${ebook.id}`} prefetch>
                     <ShoppingCart />
                     {Number(ebook.currentPrice).toLocaleString("pt")} kz
                   </Link>
                 </Button>
                 {ebook.isShared && (
-                  <Button variant={"outline"}>
-                    <Forward />
-                    Pambalar
+                  <Button
+                    variant={"outline"}
+                    onClick={() => {
+                      startTrantition(async () => {
+                        const message = await new EBookClientService(
+                          token
+                        ).createAfiliation(Number(ebook?.id));
+                        toast.info(message);
+                      });
+                    }}
+                  >
+                    {isPending ? (
+                      <Loader2 className="animate-spin" />
+                    ) : (
+                      <>
+                        <Forward />
+                        Pambalar
+                      </>
+                    )}
                   </Button>
                 )}
               </div>

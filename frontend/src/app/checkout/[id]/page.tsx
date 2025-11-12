@@ -65,6 +65,8 @@ export default function CheckoutProduct() {
       const product = await new EBookClientService(
         String(token)
       ).getEbookDetails(id);
+
+      console.log(product);
       if (product.hasError) {
         toast.error(product.message);
       } else {
@@ -116,6 +118,7 @@ export default function CheckoutProduct() {
         router.push("/enter");
         return;
       }
+
 
       if (!file) {
         toast.error("Envie um arquivo");

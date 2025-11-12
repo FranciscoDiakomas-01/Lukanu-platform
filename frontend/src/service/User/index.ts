@@ -54,14 +54,80 @@ export default class UserClientService {
       };
     }
   }
-  public async updateMyData(data: any) {
+  public async updateMyData(data: {
+    iban: string;
+    bank: string;
+    firstName: string;
+    lastName: string;
+    email: string;
+  }) {
     try {
+      const res = await fetch(`${server}/users/me`, {
+        headers: {
+          authorization: `BEARER ${this.token}`,
+          "Content-Type": "application/json",
+        },
+        method: "PATCH",
+        body: JSON.stringify(data),
+      });
+
+      const dataResponse = await res.json();
+      console.log(dataResponse);
+      const message = Array.isArray(dataResponse?.message)
+        ? dataResponse?.message[0]
+        : dataResponse?.message;
+      return {
+        message,
+        hasError: false,
+      };
     } catch (error) {
+      console.log(error);
       return {
         hasError: true,
         message: "Erro ao actualizar os dados",
       };
     }
   }
-  public async updateCredentials() {}
+
+  public async updateCredentials(data: {
+    newPassWord: string;
+    odlPassword: string;
+    confirmNewPassword: string;
+  }) {
+    try {
+      if (data.newPassWord != data.confirmNewPassword) {
+        return {
+          sucess: false,
+          message: "As senhas não combinam",
+        };
+      }
+      const res = await fetch(`${server}/users/me`, {
+        headers: {
+          authorization: `BEARER ${this.token}`,
+          "Content-Type": "application/json",
+        },
+        method: "PUT",
+        body: JSON.stringify({
+          newPassWord: data.newPassWord,
+          odlPassword: data.odlPassword,
+        }),
+      });
+
+      const dataResponse = await res.json();
+      console.log(dataResponse);
+      const message = Array.isArray(dataResponse?.message)
+        ? dataResponse?.message[0]
+        : dataResponse?.message;
+      return {
+        message,
+        sucess: dataResponse?.sucess ? true : false,
+      };
+    } catch (error) {
+      console.log(error);
+      return {
+        sucess: true,
+        message: "Erro ao actualizar os dados",
+      };
+    }
+  }
 }

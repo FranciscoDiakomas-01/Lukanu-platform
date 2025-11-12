@@ -37,7 +37,6 @@ export default class CacheService implements OnModuleInit {
 
   async get<T = any>(key: string): Promise<T | undefined> {
     const value = await this.redis.get(key);
-    this.logger.debug(`Cache GET: ${key}`);
     return value as T;
   }
 
@@ -48,6 +47,5 @@ export default class CacheService implements OnModuleInit {
 
   async clear() {
     await this.redis.clear();
-    this.logger.warn('Cache CLEAR: todos os dados removidos');
   }
 }

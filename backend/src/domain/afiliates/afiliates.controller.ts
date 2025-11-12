@@ -19,8 +19,14 @@ export class AfiliatesController {
   @ApiOperation({
     summary: 'Afiliation criation',
   })
-  create(@Body() createAfiliateDto: CreateAfiliateDto) {
-    return this.afiliatesService.create(createAfiliateDto);
+  create(
+    @Body() createAfiliateDto: CreateAfiliateDto,
+    @Headers('sub') userId: string,
+  ) {
+    return this.afiliatesService.create({
+      ...createAfiliateDto,
+      userId: +userId,
+    });
   }
 
   @ApiOperation({

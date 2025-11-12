@@ -1,3 +1,4 @@
+import { Afiliation } from "@/types/Afiliation";
 import server from "../server";
 import { CreateEbookDto } from "@/types/CreateEbook";
 
@@ -153,6 +154,41 @@ export default class EBookClientService {
         hasError: true,
         message: "Erro ao fazer a consulta",
       };
+    }
+  }
+  public async createAfiliation(productId: number) {
+    try {
+      const res = await fetch(`${server}/afiliates`, {
+        method: "POST",
+        body: JSON.stringify({
+          productId,
+        }),
+        headers: {
+          authorization: `BEARER ${this.token}`,
+          "Content-Type": "application/json",
+        },
+      });
+      const data = await res.json();
+      const message = Array.isArray(data?.message)
+        ? (data.message[0] as string)
+        : (data.message as string);
+      return message;
+    } catch (error) {
+      return "Erro ao efectuar a açção";
+    }
+  }
+  public async getMyAfiliations() {
+    try {
+      const res = await fetch(`${server}/afiliates`, {
+        headers: {
+          authorization: `BEARER ${this.token}`,
+          "Content-Type": "application/json",
+        },
+      });
+      const data = await res.json();
+      return data?.data as Afiliation[];
+    } catch (error) {
+      return [] as Afiliation[]
     }
   }
 }
