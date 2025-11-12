@@ -48,12 +48,4 @@ export class SignInDto {
     message: 'Senha muito fraca',
   })
   password: string;
-  @ApiProperty()
-  @IsPhoneNumber('AO', {
-    message: 'Telefone inválido',
-  })
-  @IsNotEmpty({
-    message: 'Telefone inválido',
-  })
-  phone: string;
 }

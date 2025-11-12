@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -19,7 +19,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
-import { ChevronLeft, FileText, ImageIcon } from "lucide-react";
+import { ChevronLeft, FileText, ImageIcon, Loader2 } from "lucide-react";
 import {
   Select,
   SelectTrigger,
@@ -29,34 +29,73 @@ import {
 } from "@/components/ui/select";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
+import { uploadAction } from "@/actions/upload";
+import EBookClientService from "@/service/Ebook";
 
 type EbookFormValues = z.infer<typeof ebookSchema>;
 
-export default function CreateEbookForm() {
+export default function CreateEbookForm({ token }: { token: string }) {
+  const [isPending, startTransition] = useTransition();
   const form = useForm<EbookFormValues>({
     resolver: zodResolver(ebookSchema),
     defaultValues: {
       title: "",
       description: "",
-      author: "",
+      subtitle: "",
       category: "",
-      price: 1000,
-      allowAffiliates: false,
-      cover: undefined,
-      pdfFile: undefined,
-      comition: 0,
+      currentPrice: 100,
+      edition: 1,
+      isShared: false,
+      isDigital: true,
+      sharePercent: 1,
+      pages: 1,
+      coverUrl: undefined as any,
+      fileURl: undefined as any,
     },
   });
-
   const [coverFile, setCoverFile] = useState<File | null>(null);
   const [pdfFile, setPdfFile] = useState<File | null>(null);
   const [isAlowedComition, setisAllowedComitons] = useState(false);
+  const service = new EBookClientService(token);
   function onSubmit(data: EbookFormValues) {
-    console.log("Form submitted", data);
+    startTransition(async () => {
+      const fd = new FormData();
+      fd.append("coverUrl", data.coverUrl);
+      fd.append("fileURl", data.fileURl);
+      const res = await uploadAction(fd);
+      if (res.success) {
+        const response = await service.create({
+          coverUrl: res.coverUrl as string,
+          fileURl: res.pdfUrl as string,
+          title: data.title,
+          subtitle: data.subtitle,
+          description: data.description,
+          pages: data.pages,
+          edition: data.edition,
+          category: data.category,
+          currentPrice: data.currentPrice,
+          isDigital: data.isDigital,
+          isShared: data.isShared,
+          metaData: {},
+          sharePercent: data.sharePercent,
+        });
+        const serverMessage = Array.isArray(response?.message)
+          ? response?.message[0]
+          : response.message;
+        if (serverMessage == "message" && !response?.hasError) {
+          toast.info("Livro criado com sucesso");
+        } else {
+          toast.error(serverMessage);
+        }
+      } else {
+        toast.error(res.message);
+      }
+    });
   }
+
   function handleFileChange(
     e: React.ChangeEvent<HTMLInputElement>,
-    type: "cover" | "pdfFile"
+    type: "coverUrl" | "fileURl"
   ) {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -66,22 +105,23 @@ export default function CreateEbookForm() {
       return;
     }
 
-    if (type === "cover") {
+    if (type === "coverUrl") {
       setCoverFile(file);
     } else {
       setPdfFile(file);
     }
+
     form.setValue(type, file, {
       shouldValidate: true,
       shouldDirty: true,
       shouldTouch: true,
     });
   }
+
   const router = useRouter();
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-        {/* Título */}
         <FormField
           control={form.control}
           name="title"
@@ -98,6 +138,19 @@ export default function CreateEbookForm() {
 
         <FormField
           control={form.control}
+          name="subtitle"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Subtitulo</FormLabel>
+              <FormControl>
+                <Input placeholder="subtitulod dolivro" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
           name="description"
           render={({ field }) => (
             <FormItem>
@@ -108,20 +161,6 @@ export default function CreateEbookForm() {
                   placeholder="Resumo do conteúdo"
                   {...field}
                 />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <FormField
-          control={form.control}
-          name="author"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Autor</FormLabel>
-              <FormControl>
-                <Input placeholder="Nome do autor" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -155,7 +194,7 @@ export default function CreateEbookForm() {
 
         <FormField
           control={form.control}
-          name="price"
+          name="currentPrice"
           render={({ field }) => (
             <FormItem>
               <FormLabel>Preço (KZ)</FormLabel>
@@ -172,10 +211,48 @@ export default function CreateEbookForm() {
           )}
         />
 
+        <FormField
+          control={form.control}
+          name="pages"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Páginas</FormLabel>
+              <FormControl>
+                <Input
+                  type="number"
+                  placeholder="1"
+                  {...field}
+                  onChange={(e) => field.onChange(Number(e.target.value))}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="edition"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Edição</FormLabel>
+              <FormControl>
+                <Input
+                  type="number"
+                  placeholder="1"
+                  {...field}
+                  onChange={(e) => field.onChange(Number(e.target.value))}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
         {/* Capa */}
         <FormField
           control={form.control}
-          name="cover"
+          name="coverUrl"
           render={() => (
             <FormItem>
               <FormLabel>Imagem da Capa</FormLabel>
@@ -183,7 +260,7 @@ export default function CreateEbookForm() {
                 <Input
                   type="file"
                   accept="image/*"
-                  onChange={(e) => handleFileChange(e, "cover")}
+                  onChange={(e) => handleFileChange(e, "coverUrl")}
                 />
               </FormControl>
               {coverFile && (
@@ -202,7 +279,7 @@ export default function CreateEbookForm() {
 
         <FormField
           control={form.control}
-          name="pdfFile"
+          name="fileURl"
           render={() => (
             <FormItem>
               <FormLabel>Arquivo PDF</FormLabel>
@@ -210,7 +287,7 @@ export default function CreateEbookForm() {
                 <Input
                   type="file"
                   accept="application/pdf"
-                  onChange={(e) => handleFileChange(e, "pdfFile")}
+                  onChange={(e) => handleFileChange(e, "fileURl")}
                 />
               </FormControl>
               {pdfFile && (
@@ -230,7 +307,7 @@ export default function CreateEbookForm() {
         <div className="grid gap-4">
           <FormField
             control={form.control}
-            name="allowAffiliates"
+            name="isShared"
             render={({ field }) => (
               <FormItem className="flex  border dark:border-white/10 rounded-sm justify-between items-center gap-4 dark:bg-white/3 p-2">
                 <span className="flex flex-col gap-2">
@@ -244,9 +321,8 @@ export default function CreateEbookForm() {
                   <Switch
                     checked={field.value}
                     onCheckedChange={(e) => {
-                      field.onChange(e)
+                      field.onChange(e);
                       setisAllowedComitons((prev) => !prev);
-                      
                     }}
                   />
                 </FormControl>
@@ -256,12 +332,14 @@ export default function CreateEbookForm() {
           {isAlowedComition && (
             <FormField
               control={form.control}
-              name="comition"
+              name="sharePercent"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Comissão (KZ)</FormLabel>
+                  <FormLabel>Comissão (%)</FormLabel>
                   <FormControl>
                     <Input
+                      min={1}
+                      max={100}
                       type="number"
                       placeholder="Ex: 2000"
                       {...field}
@@ -275,8 +353,14 @@ export default function CreateEbookForm() {
           )}
         </div>
         <footer className="grid grid-cols-2 gap-4">
-          <Button type="submit" className="w-full">
-            <FileText /> Publicar
+          <Button type="submit" disabled={isPending} className="w-full">
+            {isPending ? (
+              <Loader2 className="animate-spin" />
+            ) : (
+              <>
+                <FileText /> Publicar
+              </>
+            )}
           </Button>
 
           <Button

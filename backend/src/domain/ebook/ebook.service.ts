@@ -75,19 +75,19 @@ export class EbookService {
     page,
     limit,
     userId,
+    only,
   }: {
     userId: number;
     page: number;
     limit: number;
-    }) {
-    
-    page = Number.isNaN(page) ? page : 1;
+    only: boolean;
+  }) {
     const finalLimit =
       limit > constants.max_items_per_page || limit <= 0
         ? constants.max_items_per_page
         : limit;
 
-    const skip = (page - 1) * finalLimit;
+    const skip = page > 0 ? (page - 1) * finalLimit : 0;
     const isAdmin = await this.prisma.user.findFirst({
       where: {
         id: userId,
@@ -96,41 +96,10 @@ export class EbookService {
     if (!isAdmin) {
       throw new ForbiddenException('Usuário não encontrado');
     }
-    if (isAdmin?.role == 'ADMIN') {
-      const [ebooks, total] = await Promise.all([
-        this.prisma.ebook.findMany({
-          include: {
-            author: {
-              omit: {
-                password: true,
-              },
-            },
-            _count: {
-              select: {
-                Afiliations: true,
-                Purschases: true,
-              },
-            },
-          },
-          skip,
-        }),
-        this.prisma.ebook.count({}),
-      ]);
-      const lastPage = Math.ceil(total / finalLimit);
-      return {
-        data: ebooks,
-        page,
-        limit: finalLimit,
-        maxPerPage: constants.max_items_per_page,
-        hasNextPage: lastPage > page,
-        hasPrevPage: page > 1,
-      };
+    if (!only) {
     }
     const [ebooks, total] = await Promise.all([
       this.prisma.ebook.findMany({
-        where: {
-          authorId: userId,
-        },
         include: {
           author: {
             omit: {
@@ -144,22 +113,33 @@ export class EbookService {
             },
           },
         },
-        skip,
-      }),
-      this.prisma.ebook.count({
-        where: {
-          authorId: userId,
+        orderBy: {
+          createdAt: 'desc',
         },
+        skip,
+
+        take: finalLimit,
       }),
+      this.prisma.ebook.count({}),
     ]);
-    const lastPage = Math.ceil(total / limit);
+    const lastPage = Math.ceil(total / finalLimit);
+
+    const filtreddata = ebooks.map((item: any) => {
+      if (item.authorId == userId) {
+        item.belongeMe = true;
+      } else {
+        item.belongeMe = false;
+      }
+      return item;
+    });
     return {
-      data: ebooks,
+      data: filtreddata,
       page,
       limit: finalLimit,
       maxPerPage: constants.max_items_per_page,
       hasNextPage: lastPage > page,
       hasPrevPage: page > 1,
+      lastPage,
     };
   }
   public async findOne(id: number, userid: number) {
@@ -201,6 +181,13 @@ export class EbookService {
         const ebook = await this.prisma.ebook.findFirst({
           where: {
             id,
+          },
+          include: {
+            author: {
+              omit: {
+                password: true,
+              },
+            },
           },
         });
         if (ebook) {
@@ -285,7 +272,7 @@ export class EbookService {
         sucess: true,
       };
     } catch (error) {
-      throw new BadRequestException('Erro ao eliminar o livro');
+      throw new BadRequestException('Livro não encotrado');
     }
   }
 }

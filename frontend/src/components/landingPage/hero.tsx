@@ -58,18 +58,17 @@ export default function Hero() {
               <a
                 data-aos-delay="0"
                 data-aos="fade-up"
-                href="/login"
+                href="/enter"
                 className="rounded-md bg-blue-600 px-3.5 py-2.5 text-sm font-semibold text-white shadow-xs hover:bg-blue-500 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 md:w-[180px] w-full"
-                onClick={() => {}}
+             
               >
                 Começar agora
               </a>
               <a
-                href="/sigin"
+                href="#about"
                 className="rounded-md border border-white/10 0 px-3.5 py-2.5 text-sm font-semibold text-white shadow-xs  md:w-[180px] w-full"
                 data-aos-delay="300"
                 data-aos="fade-up"
-                onClick={() => {}}
               >
                 Saber mais
               </a>

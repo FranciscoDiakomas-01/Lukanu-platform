@@ -3,15 +3,27 @@
 import { useEffect, useState } from "react";
 import DashordHeader from "../../../../components/DashordHeader";
 import {
-  BookOpenIcon,
+  AlertCircle,
   CheckCircle,
+  ChevronLeft,
   Coins,
   DollarSign,
-  FileText,
+  Download,
   HandCoinsIcon,
-  Loader,
-  Verified,
+  Loader2,
 } from "lucide-react";
+
+import {
+  Table,
+  TableBody,
+  TableCaption,
+  TableCell,
+  TableFooter,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Copy, ChevronRight } from "lucide-react";
 import Stats from "@/components/Stats";
 import {
   AlertDialog,
@@ -27,55 +39,68 @@ import {
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
-import PaymentsTable from "./table";
-export default function Payments() {
-  const [payments, setPayments] = useState([
-    {
-      title: "Total Vendas",
-      description: "total de ebooks criados por min",
-      value: 4,
-      icon: <DollarSign className="text-amber-500" size={22} />,
-      isCoin: false,
-    },
-    {
-      title: "Vendas confirmadas",
-      description: "total de ebooks criados por min",
-      value: 4,
-      icon: <HandCoinsIcon className="text-blue-500" size={22} />,
-      isCoin: false,
-    },
-    {
-      title: "Vendas Pendentes",
-      description: "total de ebooks criados por min",
-      value: 4,
-      icon: <DollarSign className="text-green-500" size={22} />,
-      isCoin: false,
-    },
-    {
-      title: "Saldo Actual",
-      description: "total de ebooks criados por min",
-      value: 4000,
-      icon: <Coins className="text-amber-500" size={22} />,
-      isCoin: true,
-    },
-    {
-      title: "Total Produtos",
-      description: "total de ebooks criados por min",
-      value: 4000,
-      icon: <Coins className="text-blue-500" size={22} />,
-      isCoin: false,
-    },
-  ]);
+import { Badge } from "@/components/ui/badge";
+import { useRouter } from "next/navigation";
+import { Avatar } from "@radix-ui/react-avatar";
+import { AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Payments } from "@/types/Payments";
+import { PurchaserviceClient } from "@/service/Payments";
+import { User } from "@/types/User";
+
+export default function PaymentsComponents() {
+  const [payments, setPayments] = useState([]);
   const [iban, setIban] = useState("");
   const [load, setIsLoad] = useState(true);
-
   const myCoins = 10000;
-
+  const [data, setData] = useState<Payments[]>([]);
+  const router = useRouter();
+  const [page, setPage] = useState(1);
+  const [lastPage, setLasPage] = useState(1);
+  const [userId, setUserId] = useState(0);
   useEffect(() => {
-    setTimeout(() => {
-      setIsLoad(false);
-    }, 1000);
-  }, []);
+    const token = localStorage.getItem("acess");
+    if (!token) {
+      localStorage.clear();
+      router.push("/enter");
+      return;
+    }
+    async function get() {
+      const response = await new PurchaserviceClient(
+        token as string
+      ).getMypurchase(page);
+      if (response.hasError) {
+        toast.info(response.message);
+      }
+      setData(response.data);
+      setPayments(response.stats);
+      setUserId(response.myId);
+      setLasPage(response.lastPage);
+    }
+
+    get()
+      .then()
+      .catch()
+      .finally(() => {
+        setTimeout(() => {
+          setIsLoad(false);
+        }, 1000);
+      });
+
+    const interval = setInterval(() => {
+      get()
+        .then()
+        .catch()
+        .finally(() => {
+          setTimeout(() => {
+            setIsLoad(false);
+          }, 1000);
+        });
+    }, 5000);
+
+    return () => {
+      clearInterval(interval);
+    };
+  }, [page]);
 
   const handleSaque = () => {
     if (!iban) {
@@ -91,19 +116,17 @@ export default function Payments() {
       });
       return;
     }
-
-    // Aqui você pode fazer a requisição de saque
     toast.success("Pedido de saque enviado", {
       description: `O valor será enviado para o IBAN: ${iban}`,
     });
   };
 
   return (
-    <main className="w-full pb-20  flex-col min-h-screen flex gap-4">
-      <DashordHeader  whoIs="seller" showInput={false} />
+    <main className="w-full pb-20  flex-col min-h-screen flex gap-8">
+      <DashordHeader whoIs="seller" showInput={false} />
       {load ? (
         <div className="flex justify-center items-center h-[70dvh] gap-1 opacity-60 scale-80">
-          <Loader className="animate-spin" /> Carregando
+          <Loader2 className="animate-spin" />
         </div>
       ) : (
         <>
@@ -113,53 +136,169 @@ export default function Payments() {
               <Stats prop={stats} key={index} />
             ))}
           </div>
-          <div className="grid md:grid-cols-2 gap-3 lg:w-[30%] px-4">
-            <Button>Relatório</Button>
-            <AlertDialog>
-              <Button variant={"outline"} asChild>
-                <AlertDialogTrigger>Sacar</AlertDialogTrigger>
-              </Button>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>Confirmar saque via IBAN</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    Insira o seu IBAN para receber o valor. O valor mínimo para
-                    saque é de <strong>50.000,00 Kz</strong>. Confirme os dados
-                    antes de prosseguir.
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
+       
+          <>
+            {Array.isArray(data) && data.length > 0 ? (
+              <>
+                <Table>
+                  <TableCaption>Vendas recentes</TableCaption>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Cliente</TableHead>
+                      <TableHead>Livro</TableHead>
+                      <TableHead>Tipo</TableHead>
+                      <TableHead>Valor</TableHead>
+                      <TableHead>Pago</TableHead>
+                      <TableHead>Data</TableHead>
+                      <TableHead>Comprovativo</TableHead>
+                      <TableHead>Ações</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {data.map((p, i) => (
+                      <TableRow key={i}>
+                        <TableCell>
+                          <Badge variant="outline">
+                            {p.status == "PAID" ? (
+                              <CheckCircle
+                                className="text-green-500 mr-1"
+                                size={16}
+                              />
+                            ) : p.status == "PENDING" ? (
+                              <Loader2
+                                className="text-yellow-500 animate-spin mr-1"
+                                size={16}
+                              />
+                            ) : (
+                              <AlertCircle
+                                className="text-red-500 mr-1"
+                                size={16}
+                              />
+                            )}
 
-                <div className="py-4">
-                  <label className="block text-sm font-medium mb-1">IBAN</label>
-                  <Input
-                    type="text"
-                    placeholder="Ex: AO06004400000123456789012"
-                    value={iban}
-                    onChange={(e) => setIban(e.target.value)}
-                  />
-                </div>
+                            {p.status === "PAID"
+                              ? "Aprovado"
+                              : p.status === "PENDING"
+                              ? "Pendente"
+                              : "Rejeitado"}
+                          </Badge>
+                        </TableCell>
 
-                <AlertDialogFooter>
-                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                  <AlertDialogAction
-                    onClick={(e) => {
-                      e.preventDefault();
-                      handleSaque();
-                    }}
-                  >
-                    Confirmar Saque
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
-          </div>
-          <PaymentsTable />
+                        <TableCell>
+                          <div className="flex flex-col">
+                            {(() => {
+                              try {
+                                const client = JSON.parse(p.client) as User;
+                                return (
+                                  <>
+                                    <Avatar className="w-10 h-10">
+                                      <AvatarImage
+                                        src={client.profileUrl}
+                                        alt={`@${client.lastName}`}
+                                        className="h-10 rounded-full"
+                                      />
+                                      <AvatarFallback className="uppercase">
+                                        {client.firstName?.charAt(0)}{" "}
+                                        {client.lastName?.charAt(0)}
+                                      </AvatarFallback>
+                                    </Avatar>
+                                    <span>
+                                      {client.firstName} {client.lastName}
+                                    </span>
+                                    <small>{client.email}</small>
+                                  </>
+                                );
+                              } catch (error) {
+                                return <p>Sem informação</p>;
+                              }
+                            })()}
+                          </div>
+                        </TableCell>
+
+                        <TableCell>
+                          <div className="flex flex-col">
+                            <img
+                              src={p.ebook.coverUrl}
+                              className="h-12 w-10 "
+                              alt="Livro"
+                            />
+                            <span>{p.ebook.title?.slice(0, 10)} ...</span>
+                          </div>
+                        </TableCell>
+
+                        <TableCell>
+                          <Badge
+                            variant="outline"
+                            className=" bordergre bg-green-500/10 text-green-500"
+                          >
+                            {p.owner.id == userId ? "Venda" : "Compra"}
+                          </Badge>
+                        </TableCell>
+
+                        <TableCell>{p.price.toLocaleString("pt")} Kz</TableCell>
+                        <TableCell>{p.payed.toLocaleString("pt")} Kz</TableCell>
+
+                        <TableCell>
+                          {new Date(p.createdAt).toLocaleTimeString("pt") +
+                            " : " +
+                            new Date(p.createdAt).toLocaleDateString("pt")}{" "}
+                        </TableCell>
+                        <TableCell>
+                          <Button asChild variant={"secondary"}>
+                            <a href={p.fileUrl} target="_blank">
+                              Compravativo
+                            </a>
+                          </Button>
+                        </TableCell>
+
+                        {p.status == "PAID" && p.owner.id == userId ? (
+                          <TableCell>
+                            <Button asChild>
+                              <a
+                                href={p.ebook.fileURl}
+                                target="_blank"
+                                download
+                              >
+                                Baixar <Download />
+                              </a>
+                            </Button>
+                          </TableCell>
+                        ) : (
+                          <TableCell className="text-sm text-muted">
+                            Sem acções
+                          </TableCell>
+                        )}
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+                <span className="flex items-center justify-between">
+                  <span>{page + " de " + lastPage}</span>
+                  <span className="space-x-2 pr-5">
+                    <Button
+                      variant="outline"
+                      disabled={page === 1}
+                      onClick={() => setPage(page - 1)}
+                    >
+                      <ChevronLeft />
+                    </Button>
+                    <Button
+                      variant="outline"
+                      disabled={page === lastPage}
+                      onClick={() => setPage(page + 1)}
+                    >
+                      <ChevronRight />
+                    </Button>
+                  </span>
+                </span>
+              </>
+            ) : (
+              <p className="text-center mt-5 ">Sem vendas realizadas</p>
+            )}
+          </>
         </>
       )}
     </main>
   );
 }
-
-
-
-

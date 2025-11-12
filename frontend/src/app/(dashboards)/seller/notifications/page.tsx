@@ -1,33 +1,54 @@
 "use client";
 
-import { Bell, CheckCircle, Info, XCircle, Loader2 } from "lucide-react";
+import {
+  Bell,
+  CheckCircle,
+  ChevronLeft,
+  ChevronRight,
+  Info,
+  XCircle,
+} from "lucide-react";
 import { useEffect, useState } from "react";
-import notificationsMock from "@/constants/mocks/notification";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import DashordHeader from "@/components/DashordHeader";
-
+import UserClientService from "@/service/User";
+import { Notification } from "@/types/Notification";
 export default function NotificationsList() {
-  const [notifications, setNotifications] = useState<
-    typeof notificationsMock | null
-  >(null);
+  const [notifications, setNotifications] = useState<Notification[] | null>(
+    null
+  );
 
+  const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(1);
+  const [lastPage, setlastPage] = useState(0);
   useEffect(() => {
-    const timeout = setTimeout(() => {
-      setNotifications(notificationsMock);
-    }, 2500);
-
-    return () => clearTimeout(timeout);
-  }, []);
-
+    async function get() {
+      const token = localStorage.getItem("acess") as string;
+      const service = new UserClientService(token);
+      const data = await service.notifications(page);
+      console.log(page, data);
+      if (data?.hasError) return;
+      setNotifications(data?.data as Notification[]);
+      setlastPage(data?.lastPage || 0);
+      setLoading(false);
+    }
+    get();
+  }, [page]);
   return (
     <main className="w-full pb-20  lg:h-screen flex-col min-h-screen flex gap-4">
       <DashordHeader whoIs="seller" showInput={false} />
-      <Card className="w-[98%] lg:h-[90%]  place-self-center">
+      <Card className="w-[98%] lg:h-[90%] bg-transparent border-none place-self-center">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-lg">
             <Bell className="text-primary" size={20} />
@@ -39,10 +60,12 @@ export default function NotificationsList() {
           <Separator />
           <ScrollArea className=" h-full px-4 ">
             <ul className="divide-y divide-muted">
-              {notifications
-                ? notifications.map((notif) => (
+              {!loading &&
+              Array.isArray(notifications) &&
+              notifications.length > 0
+                ? notifications.map((notif, index) => (
                     <li
-                      key={notif.id}
+                      key={index}
                       className="py-4 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2"
                     >
                       <div className="flex items-start gap-3">
@@ -68,14 +91,14 @@ export default function NotificationsList() {
                           )}
                         </Badge>
 
-                        {notif.deeplink && (
+                        {notif.deepLink && (
                           <Button
                             size="sm"
                             variant="link"
                             className="p-0 h-auto text-xs"
                             asChild
                           >
-                            <a href={notif.deeplink}>Ver mais</a>
+                            <a href={notif.deepLink}>Ver mais</a>
                           </Button>
                         )}
                       </div>
@@ -102,6 +125,24 @@ export default function NotificationsList() {
             </ul>
           </ScrollArea>
         </CardContent>
+        <CardFooter className="flex items-center justify-between">
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={page === 1}
+            onClick={() => setPage((prev) => prev - 1)}
+          >
+            <ChevronLeft /> Anterio
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={page === lastPage}
+            onClick={() => setPage((prev) => prev + 1)}
+          >
+            Proximo <ChevronRight />
+          </Button>
+        </CardFooter>
       </Card>
     </main>
   );

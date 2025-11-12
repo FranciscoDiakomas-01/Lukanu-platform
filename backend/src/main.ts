@@ -20,6 +20,7 @@ async function bootstrap() {
     .addBearerAuth()
     .build();
   const document = SwaggerModule.createDocument(app, config);
+  app.enableCors("'http://localhost:3000'");
   app.use(
     '/docs',
     apiReference({
@@ -37,7 +38,6 @@ async function bootstrap() {
       forbidUnknownValues: true,
     }),
   );
-  app.enableCors();
   app.use(helmet());
   app.use(compression());
   await app.listen(process.env.PORT ?? 3000);

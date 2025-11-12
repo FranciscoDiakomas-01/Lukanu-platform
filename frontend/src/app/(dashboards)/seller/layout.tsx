@@ -1,10 +1,11 @@
 "use client";
 
 import DashBoardLayout from "@/components/Layout";
-export default function Layout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
-  return <DashBoardLayout whoIs="seller">{children}</DashBoardLayout>;
+import UserContextComponent from "@/context/userContext";
+export default function Layout({ children }: { children: React.ReactNode }) {
+  return (
+    <UserContextComponent>
+      <DashBoardLayout whoIs="seller">{children}</DashBoardLayout>
+    </UserContextComponent>
+  );
 }

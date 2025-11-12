@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  ConflictException,
   ForbiddenException,
   Injectable,
   NotFoundException,
@@ -11,9 +12,7 @@ import constants from '@core/constants';
 
 @Injectable()
 export class WithdralService {
-  constructor(
-    private readonly prisma: PrismaService,
-  ) {}
+  constructor(private readonly prisma: PrismaService) {}
   async create(data: CreateWithdralDto, userId: number) {
     const [user, admin] = await Promise.all([
       this.prisma.user.findFirst({
@@ -34,8 +33,15 @@ export class WithdralService {
     if (!user) {
       throw new NotFoundException('Usuário nao encontrado');
     }
-    if (!user.iban || !user.bank) {
-      throw new ForbiddenException('Dados bancários em falta');
+    if (!user.iban) {
+      throw new ForbiddenException(
+        'Define seu iban , acesse seu perfil e define o seu iban',
+      );
+    }
+    if (!user.bank) {
+      throw new ForbiddenException(
+        'Define seu banco , acesse seu perfil e define o seu banco',
+      );
     }
     if (user.totalAvaliable < data.amount) {
       throw new ForbiddenException('Saldo insufficiente');
@@ -98,10 +104,17 @@ export class WithdralService {
 
     if (user.role == 'ADMIN') {
       const [total, widthdrall] = await this.prisma.$transaction([
-        this.prisma.subscription.count(),
-        this.prisma.subscription.findMany({
+        this.prisma.withdral.count(),
+        this.prisma.withdral.findMany({
           take: finalLimit,
           skip: (page - 1) * finalLimit,
+          include: {
+            user: {
+              omit: {
+                password: true,
+              },
+            },
+          },
         }),
       ]);
 
@@ -113,19 +126,27 @@ export class WithdralService {
         maxPerPage: constants.max_items_per_page,
         hasNextPage: lastPage > page,
         hasPrevPage: page > 1,
+        lastPage,
       };
     }
     const [total, widthdrall] = await this.prisma.$transaction([
-      this.prisma.subscription.count({
+      this.prisma.withdral.count({
         where: {
           userId,
         },
       }),
-      this.prisma.subscription.findMany({
+      this.prisma.withdral.findMany({
         take: finalLimit,
         skip: (page - 1) * finalLimit,
         where: {
           userId,
+        },
+        include: {
+          user: {
+            omit: {
+              password: true,
+            },
+          },
         },
       }),
     ]);
@@ -138,9 +159,22 @@ export class WithdralService {
       maxPerPage: constants.max_items_per_page,
       hasNextPage: lastPage > page,
       hasPrevPage: page > 1,
+      lastPage,
     };
   }
-  update(id: number, status: STATUS) {
+  async update(id: number, status: STATUS) {
+    const widthTraw = await this.prisma.withdral.findFirst({
+      where: {
+        id,
+      },
+    });
+    if (!widthTraw) {
+      throw new NotFoundException('Saque não encontrado');
+    }
+    if (widthTraw.status != 'PENDING') {
+      throw new ConflictException('Saque já foi processado');
+    }
+
     try {
       this.prisma.withdral
         .update({

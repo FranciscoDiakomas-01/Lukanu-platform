@@ -15,6 +15,7 @@ import {
   MenubarTrigger,
 } from "@/components/ui/menubar";
 import {
+  BanknoteArrowDownIcon,
   Clapperboard,
   Gem,
   Menu,
@@ -43,9 +44,13 @@ import { Button } from "../ui/button";
 
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { useEffect, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { UserContext } from "@/context/userContext";
+import type { User } from "@/types/User";
+import clsx from "clsx";
+import UserClientService from "@/service/User";
 interface Props {
   whoIs: "seller" | "admin" | "teacher";
   showInput: boolean;
@@ -53,12 +58,7 @@ interface Props {
 }
 
 export default function DashordHeader(prop: Props) {
-  const User = {
-    name: "Francisco",
-    lastname: "Diakomas",
-    email: "francisco@gmail.com",
-  };
-
+  const { user } = useContext(UserContext) as { user: User };
   const [isDark, setIsDark] = useState(false);
   const adminLinks = [
     {
@@ -69,29 +69,9 @@ export default function DashordHeader(prop: Props) {
   ];
   const sellerLinks = [
     {
-      title: "Livros",
-      to: "/seller",
-      icon: <PackageOpen className="transition-all" size={18} />,
-    },
-    {
-      title: "Cursos",
-      to: "/seller/courses",
-      icon: <Clapperboard className="transition-all" size={18} />,
-    },
-    {
-      title: "Vendas",
-      to: "/seller/payments",
-      icon: <ShoppingCart className="transition-all" size={18} />,
-    },
-    {
-      title: "Saques",
-      to: "/seller/checkout",
-      icon: <PiggyBank className="transition-all" size={18} />,
-    },
-    {
-      title: "Compras",
-      to: "/seller/buys",
-      icon: <ShoppingBag className="transition-all" size={18} />,
+      title: "Afiliações",
+      to: "/seller/afiliates",
+      icon: <BanknoteArrowDownIcon className="transition-all" size={20} />,
     },
   ];
   const teacherLinks = [
@@ -142,18 +122,7 @@ export default function DashordHeader(prop: Props) {
     }
   }
   return (
-    <header className="w-full sticky top-0 z-[40]  p-2 lg:justify-between justify-end lg:items-center   gap-4 border-b backdrop-blur-2xl dark:border-white/10  grid grid-cols-2 ">
-      <div>
-        {prop.showInput && (
-          <form className="lg:w-[50%] lg:flex hidden   py-1 px-1 border-black/10 items-cente relative">
-            <Input
-              className="w-full"
-              placeholder={prop.placeholder ?? "Buscar ..."}
-            />
-            <Search size={16} className="absolute right-3 top-3" />
-          </form>
-        )}
-      </div>
+    <header className="w-full sticky top-0 z-40  p-2 lg:justify-between justify-end lg:items-center   gap-4 border-b backdrop-blur-2xl dark:border-white/10  ">
       <div className="flex justify-end items-center gap-3">
         <Link
           href={
@@ -165,15 +134,37 @@ export default function DashordHeader(prop: Props) {
           }
           prefetch
         >
-          <span className=" justify-center flex items-center w-8  font-semibold rounded-full border dark:border-white/10 h-8">
+          <span
+            className={clsx(
+              "justify-center flex items-center w-8  font-semibold rounded-full  h-8",
+              {
+                "animate-pulse hover:animate-none":
+                  user?.totalUnreadNotification &&
+                  user?.totalUnreadNotification > 0,
+              }
+            )}
+            onClick={async () => {
+              const token = localStorage.getItem("acess");
+              const service = new UserClientService(token as string);
+              await service.notifications(1);
+            }}
+          >
             <Bell size={14} />
+            {Number(user?.totalUnreadNotification) > 0 && (
+              <sup className="bg-primary text-[10px] w-5 h-4 rounded-md flex justify-center items-center dark:text-white text-black">
+                {user?.totalUnreadNotification}
+              </sup>
+            )}
           </span>
         </Link>
         <div className="flex gap-3">
-          <Avatar className="md:flex hidden">
-            <AvatarImage src="https://github.com/shadcn.png" alt="@shadcn" />
+          <Avatar className="md:flex hidden ">
+            <AvatarImage
+              src={user?.profileUrl}
+              alt={user.firstName + user.lastName}
+            />
             <AvatarFallback className="dark:bg-white bg-[#080808] text-white dark:text-black justify-center flex items-center w-10 uppercase font-semibold">
-              {User.name?.charAt(0) + User.lastname?.charAt(0)}
+              {user.firstName?.charAt(0) + user.lastName?.charAt(0)}
             </AvatarFallback>
           </Avatar>
 
@@ -185,20 +176,34 @@ export default function DashordHeader(prop: Props) {
               <MenubarTrigger className="font-sans  text-start gap-3">
                 <Avatar className="lg:hidden flex">
                   <AvatarImage
-                    src="https://github.com/shadcn.png"
-                    alt="@shadcn"
+                    src={user?.profileUrl}
+                    alt={user.firstName + user.lastName}
                   />
                   <AvatarFallback className="dark:bg-white bg-[#080808] text-white dark:text-black justify-center flex items-center w-10 uppercase font-semibold">
-                    {User.name?.charAt(0) + User.lastname?.charAt(0)}
+                    {user.firstName?.charAt(0) + user.lastName?.charAt(0)}
                   </AvatarFallback>
                 </Avatar>
                 <ChevronDown size={14} className="dark:text-white" />
               </MenubarTrigger>
-              <MenubarContent className="bg-transparent dark:text-black border-white/10 backdrop-blur-2xl flex flex-col gap-3 ">
+              <MenubarContent className="bg-transparent dark:text-black border-white/10  backdrop-blur-2xl flex flex-col gap-3 ">
+                <span
+                  className="flex flex-col dark:text-white text-center
+                "
+                >
+                  <p>{user.firstName + " " + user.lastName}</p>
+                  <small className="text-[11px] ">{user.email}</small>
+                </span>
                 <Link href={prop.whoIs + "/settings"}>
                   <MenubarItem className="flex cursor-pointer">
                     <Settings size={14} />
                     Configurações
+                  </MenubarItem>
+                </Link>
+
+                <Link href={"/seller/cacheout"}>
+                  <MenubarItem className="flex cursor-pointer">
+                    <PiggyBank size={14} />
+                    Saques
                   </MenubarItem>
                 </Link>
 
@@ -224,7 +229,8 @@ export default function DashordHeader(prop: Props) {
 
                 <Button
                   onClick={() => {
-                    router.push("/login");
+                    localStorage.clear();
+                    router.push("/enter");
                   }}
                 >
                   <LogOut />
@@ -240,11 +246,11 @@ export default function DashordHeader(prop: Props) {
             <MenubarMenu>
               <MenubarTrigger className="font-sans  text-start gap-3">
                 <span
-                  className="flex flex-col dark:text-white
+                  className="flex flex-col  dark:text-white 
                 "
                 >
-                  <p>{User.name + " " + User.lastname}</p>
-                  <small className="text-[11px] ">{User.email}</small>
+                  <p>{user.firstName + " " + user.lastName}</p>
+                  <small className="text-[11px] ">{user.email}</small>
                 </span>
                 <ChevronDown size={14} className="dark:text-white" />
               </MenubarTrigger>
@@ -263,14 +269,12 @@ export default function DashordHeader(prop: Props) {
                     Configurações
                   </MenubarItem>
                 </Link>
-
                 <a href={"https://www.youtube.com/@Lukanu-v"}>
                   <MenubarItem className="flex cursor-pointer">
                     <HelpCircle size={14} />
                     Ajuda
                   </MenubarItem>
                 </a>
-
                 <div className="flex px-2 my-2 items-center space-x-2">
                   <Switch
                     id="airplane-mode"

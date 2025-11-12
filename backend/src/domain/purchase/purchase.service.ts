@@ -13,10 +13,7 @@ import constants from '@core/constants';
 
 @Injectable()
 export class PurchaseService {
-  constructor(
-    private readonly cache: CacheService,
-    private readonly prisma: PrismaService,
-  ) {}
+  constructor(private readonly prisma: PrismaService) {}
   async create(data: CreatePurchaseDto, userId: number) {
     const [isAProduct, isAUser, isAnBuyer, isAfiliationCode] =
       await Promise.all([
@@ -29,10 +26,16 @@ export class PurchaseService {
           where: {
             id: data.ownerId,
           },
+          omit: {
+            password: true,
+          },
         }),
         this.prisma.user.findFirst({
           where: {
             id: userId,
+          },
+          omit: {
+            password: true,
           },
         }),
         this.prisma.afiliations.findFirst({
@@ -57,10 +60,17 @@ export class PurchaseService {
     await Promise.all([
       this.prisma.purschase.create({
         data: {
-          ...data,
           price: isAProduct.currentPrice,
           payed: 0,
           afiliationCode: data?.affCode,
+          digital: data.digital,
+          fileUrl: data.fileUrl,
+          buyerId: userId,
+          description: '',
+          ebookId: data.ebookId,
+          ownerId: data.ownerId,
+          status: 'PENDING',
+          client: JSON.stringify(isAnBuyer),
         },
       }),
       this.prisma.notification.createMany({
@@ -124,32 +134,23 @@ export class PurchaseService {
       throw new NotFoundException('Usuário não ncontrado');
     }
 
-    const [sells, buys, totalPayment, totalByus] = await Promise.all([
+    const [purchases, totalPurchases, totalPurchase] = await Promise.all([
       this.prisma.purschase.findMany({
         where:
           isUser?.role == 'ADMIN'
             ? {}
             : {
-                ownerId: userId,
+                OR: [
+                  {
+                    ownerId: userId,
+                  },
+                  {
+                    buyerId: userId,
+                  },
+                ],
               },
         take: finalLimit,
         skip,
-        include: {
-          ebook: true,
-          owner: {
-            omit: {
-              password: true,
-            },
-          },
-        },
-      }),
-      this.prisma.purschase.findMany({
-        where: {
-          buyerId: userId,
-        },
-        take: finalLimit,
-        skip,
-
         include: {
           ebook: true,
           owner: {
@@ -164,35 +165,82 @@ export class PurchaseService {
           isUser?.role == 'ADMIN'
             ? {}
             : {
-                ownerId: userId,
+                OR: [
+                  {
+                    ownerId: userId,
+                  },
+                  {
+                    buyerId: userId,
+                  },
+                ],
               },
       }),
-      this.prisma.purschase.count({
-        where: {
-          buyerId: userId,
+      this.prisma.purschase.aggregate({
+        _count: {
+          payed: true,
+          price: true,
         },
+        where:
+          isUser?.role == 'ADMIN'
+            ? {}
+            : {
+                ownerId: userId,
+                status: 'PENDING',
+              },
       }),
     ]);
-
-    const lastPage = Math.ceil(totalPayment / finalLimit);
-    const lastPage2 = Math.ceil(totalByus / finalLimit);
+    const lastPage = Math.ceil(totalPurchases / finalLimit);
     return {
-      payments: {
-        data: sells,
-        page,
-        limit: finalLimit,
-        maxPerPage: constants.max_items_per_page,
-        hasNextPage: lastPage > page,
-        hasPrevPage: page > 1,
-      },
-      buys: {
-        data: buys,
-        page,
-        limit: finalLimit,
-        maxPerPage: constants.max_items_per_page,
-        hasNextPage: lastPage2 > page,
-        hasPrevPage: page > 1,
-      },
+      data: purchases,
+      page,
+      limit: finalLimit,
+      maxPerPage: constants.max_items_per_page,
+      hasNextPage: lastPage > page,
+      hasPrevPage: page > 1,
+      lastPage,
+      myId: userId,
+      stats:
+        isUser.role == 'ADMIN'
+          ? [
+              {
+                title: 'Total Vendas',
+                description: 'Total facturado na plaforma',
+                value: totalPurchase._count.payed,
+                isCoin: true,
+              },
+              {
+                title: 'Saldo',
+                description: 'Valor disponível para saque',
+                value: this.getPlatFormercent(totalPurchase._count.payed),
+                isCoin: true,
+              },
+            ]
+          : [
+              {
+                title: 'Total Vendas',
+                description: 'Total facturado na plaforma',
+                value: isUser.totalErned,
+                isCoin: true,
+              },
+              {
+                title: 'Saldo',
+                description: 'Valor disponível para saque',
+                value: isUser.totalAvaliable,
+                isCoin: true,
+              },
+              {
+                title: 'Vendas Pendentes',
+                description: 'Total de livros criados por mim',
+                value: totalPurchase._count.price,
+                isCoin: false,
+              },
+              {
+                title: 'Livros',
+                description: 'Total de livros criados por mim',
+                value: isUser.totalBooks,
+                isCoin: false,
+              },
+            ],
     };
   }
   async update(id: number, data: UpdatePurchaseDto) {
@@ -226,10 +274,7 @@ export class PurchaseService {
 
     if (data.status == 'PAID') {
       if (payment.afiliationCode) {
-        const amount = this.getPlatFormercent(
-          payment.ebook.currentPrice,
-          payment.digital,
-        );
+        const amount = this.getPlatFormercent(payment.ebook.currentPrice);
         const Afilate = await this.prisma.afiliations.findFirst({
           where: {
             link: {
@@ -306,7 +351,6 @@ export class PurchaseService {
             sucess: true,
           };
         }
-
         await this.prisma.$transaction([
           this.prisma.purschase.update({
             data: {
@@ -351,10 +395,7 @@ export class PurchaseService {
           sucess: true,
         };
       } else {
-        const amount = this.getPlatFormercent(
-          payment.ebook.currentPrice,
-          payment.digital,
-        );
+        const amount = this.getPlatFormercent(payment.ebook.currentPrice);
         await this.prisma.$transaction([
           this.prisma.purschase.update({
             data: {
@@ -442,8 +483,8 @@ export class PurchaseService {
       };
     }
   }
-  private getPlatFormercent(price: number, digital: boolean) {
-    const percent = digital ? 0.1 : 0.7;
+  private getPlatFormercent(price: number) {
+    const percent = 0.1;
     const descount = price * percent;
     return price - descount;
   }

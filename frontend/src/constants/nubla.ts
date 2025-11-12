@@ -1,1 +1,1 @@
-export default "/login";
+export default "/enter";

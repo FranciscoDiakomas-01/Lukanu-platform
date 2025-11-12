@@ -16,15 +16,24 @@ import card2 from "@/assets/carousel2.png";
 import card3 from "@/assets/carousel3.png";
 import Image from "next/image";
 import { Input } from "@/components/ui/input";
-import { Loader, Loader2Icon, Search } from "lucide-react";
+import {
+  ChevronLeft,
+  ChevronRight,
+  Filter,
+  Loader,
+  Loader2Icon,
+  Search,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import TextType from "@/components/animated/Typing";
 import Ebook from "@/types/ebook";
-import { ebooksMock } from "@/constants/mocks/ebook.mock";
 import { EbookCard, EbookCardSkeleton } from "@/components/Ebook";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import MyEbooks from "./myEbooks.table";
+import EBookClientService from "@/service/Ebook";
+import { toast } from "sonner";
+import { CreateEbookDto } from "@/types/CreateEbook";
 export default function Home() {
   const plugin = useRef(
     Autoplay({
@@ -65,16 +74,66 @@ export default function Home() {
     },
   ];
   const router = useRouter();
-  const [ebooks, setEboks] = useState<Ebook[]>([]);
+  const [ebooks, setEboks] = useState<CreateEbookDto[]>([]);
   const [isLoad, setIsLoad] = useState(true);
   const [showMyEbooks, setShowMyEbooks] = useState(false);
+  const [page, setPage] = useState(1);
+  const [lastPage, setLastPage] = useState(0);
+  const [search, setSearch] = useState("");
+  const filtered = ebooks.filter((ebook) => {
+    const term = search.toLowerCase();
+    if (showMyEbooks && !ebook.belongeMe) return false;
+    if (!term) return true;
+
+    const isNumber = !isNaN(Number(term));
+
+    return (
+      ebook.title.toLowerCase().includes(term) ||
+      ebook.subtitle.toLowerCase().includes(term) ||
+      ebook.description.toLowerCase().includes(term) ||
+      (isNumber && Number(ebook.currentPrice) === Number(term))
+    );
+  });
+
   useEffect(() => {
-    setIsLoad(true);
-    setEboks(ebooksMock);
-    setTimeout(() => {
-      setIsLoad(false);
-    }, 2500);
-  }, [showMyEbooks]);
+    async function getEbooks() {
+      const token = localStorage.getItem("acess") as string;
+      const service = new EBookClientService(token);
+      const data = await service.getMyEbooks(page);
+      console.log(data);
+      if (data?.hasError) {
+        setEboks([]);
+        setLastPage(1);
+        toast.warning("Erro ao consultar os livros");
+        return;
+      } else {
+        if (page == 1) {
+          setEboks(data.data);
+        } else {
+          const responseData = [...data.data] as CreateEbookDto[];
+
+          setEboks((prev) => [...prev, ...responseData]);
+        }
+        setLastPage(data.lastPage);
+      }
+    }
+    getEbooks()
+      .then((e) => {})
+      .catch()
+      .finally(() => {
+        setTimeout(() => {
+          setIsLoad(false);
+        }, 1000);
+      });
+  }, [page]);
+
+  useEffect(() => {
+    if (!search) {
+      setEboks((prev) => prev);
+      return;
+    } else {
+    }
+  }, [search, page]);
 
   return (
     <section className="w-full pb-20  flex-col min-h-screen flex gap-4">
@@ -154,62 +213,68 @@ export default function Home() {
         </Carousel>
       </article>
       <aside className="flex pt-10 w-full flex-col gap-8 min-h-screen px-4">
-        <div className="justify-center items-center md:flex hidden dark:lg:flex">
-          <TextType
-            text={[
-              "Encontre o próximo livro que vai transformar sua mente.",
-              "Descubra seu próximo livro favorito.",
-              "Cada livro é uma porta para um novo universo.",
-            ]}
-            className="lg:text-4xl  text-2xl text-center"
-          />
-        </div>
-        <div className="flex md:flex-row flex-col-reverse justify-center w-full gap-4 ">
+        <div className="flex justify-center w-full gap-4 ">
           <form action="" className="lg:w-[30%] w-full relative">
-            <Input className="w-full" placeholder="Buscar por livro" />
-            <Search size={18} className="absolute right-2 top-2" />
-          </form>
+            <Input
+              className="w-full h-11"
+              placeholder="Buscar por livro"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
 
+            <Button
+              type="button"
+              onClick={() => {
+                setShowMyEbooks((prev) => !prev);
+              }}
+              size="sm"
+              variant={showMyEbooks ? "default" : "outline"}
+              className="absolute top-1.5 right-1.5"
+            >
+              <Filter />
+            </Button>
+          </form>
           <Button asChild>
-            <Link href="/seller/ebook">
-              <span>Publicar livro</span>
-            </Link>
-          </Button>
-          <Button
-            onClick={() => {
-              setEboks([]);
-              setShowMyEbooks((prev) => !prev);
-            }}
-            variant={"outline"}
-          >
-            {!showMyEbooks ? "Meus livros" : "Ver todos"}
+            <Link href="/seller/ebook">Novo</Link>
           </Button>
         </div>
 
-        {showMyEbooks ? (
-          <MyEbooks />
-        ) : (
-          <>
-            {isLoad ? (
-              <aside className="grid lg:grid-cols-3 md:grid-cols-2 sm:grid-cols-1 grid-cols-1 gap-6 mt-8">
-                {[1, 2, 3, 4, 5, 6].map((_, index) => (
-                  <EbookCardSkeleton key={index} />
-                ))}
-              </aside>
-            ) : (
-              <>
-                {Array.isArray(ebooks) && ebooks.length > 0 ? (
-                  <aside className="grid lg:grid-cols-3 md:grid-cols-2 sm:grid-cols-1 grid-cols-1 gap-6 mt-8">
-                    {ebooks.map((item, index) => (
+        <>
+          {isLoad ? (
+            <aside className="grid lg:grid-cols-4 md:grid-cols-2 sm:grid-cols-1 grid-cols-1 gap-6 mt-8">
+              {[1, 2, 3, 4, 5, 6].map((_, index) => (
+                <EbookCardSkeleton key={index} />
+              ))}
+            </aside>
+          ) : (
+            <>
+              {Array.isArray(filtered) && filtered.length > 0 && (
+                <>
+                  <aside className="grid lg:grid-cols-4 md:grid-cols-2 sm:grid-cols-1 grid-cols-1 gap-6 mt-8">
+                    {filtered.map((item, index) => (
                       <EbookCard ebook={item} key={index} />
                     ))}
                   </aside>
-                ) : (
-                  <></>
-                )}
-              </>
-            )}
-          </>
+
+                  <span className="flex items-center justify-between">
+                    <span>{page + " de " + lastPage}</span>
+                    <Button
+                      variant="outline"
+                      disabled={page === lastPage}
+                      onClick={() => setPage(page + 1)}
+                    >
+                      Ver Mais <ChevronRight />
+                    </Button>
+                  </span>
+                </>
+              )}
+            </>
+          )}
+        </>
+        {filtered.length == 0 && (
+          <p className="text-center mt-8">
+            Nenhum livro foi publicaddo <br /> Seje o primeiro a publicar{" "}
+          </p>
         )}
       </aside>
     </section>

@@ -9,6 +9,7 @@ import {
   Headers,
   Query,
   ParseIntPipe,
+  ParseBoolPipe,
 } from '@nestjs/common';
 import { EbookService } from './ebook.service';
 import { CreateEbookDto } from './dto/create-ebook.dto';
@@ -35,11 +36,13 @@ export class EbookController {
     @Headers('sub') id: string,
     @Query('page', ParseIntPipe) page: number = 1,
     @Query('limit', ParseIntPipe) limit: number,
+    @Query('only', ParseBoolPipe) only: boolean = false,
   ) {
     return this.ebookService.findAll({
       userId: +id,
       page,
       limit,
+      only,
     });
   }
 

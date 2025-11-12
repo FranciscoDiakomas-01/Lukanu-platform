@@ -4,6 +4,7 @@ import {
   Headers,
   ParseIntPipe,
   Patch,
+  Post,
   Query,
 } from '@nestjs/common';
 import { NoficationsService } from './nofications.service';
@@ -25,11 +26,4 @@ export class NoficationsController {
     return this.noficationsService.findAll(+userId, page, limit);
   }
 
-  @Patch('read')
-  @ApiOperation({
-    summary: 'read',
-  })
-  update(@Headers('sub') id: string) {
-    return this.noficationsService.update(+id);
-  }
 }

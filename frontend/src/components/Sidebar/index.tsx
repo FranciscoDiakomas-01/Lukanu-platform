@@ -44,19 +44,14 @@ export default function Sidebar(props: Props) {
       icon: <Clapperboard className="transition-all" size={18} />,
     },
     {
-      title: "Vendas",
+      title: "Pagamentos",
       to: "/seller/payments",
       icon: <ShoppingCart className="transition-all" size={18} />,
     },
     {
       title: "Saques",
-      to: "/seller/checkout",
+      to: "/seller/cacheout",
       icon: <PiggyBank className="transition-all" size={18} />,
-    },
-    {
-      title: "Compras",
-      to: "/seller/buys",
-      icon: <ShoppingBag className="transition-all" size={18} />,
     },
     {
       title: "Afiliações",
@@ -160,7 +155,8 @@ export default function Sidebar(props: Props) {
           </Link>
           <Button
             onClick={() => {
-              router.push("/login");
+              router.push("/enter");
+              localStorage.clear();
             }}
             className="w-full h-[43px] dark:bg-red-500/2 dark:border-red-500/10 font-normal border shadow-none dark:dark:text-red-500 dark:hover:text-white dark:hover:*:text-white dark:hover:bg-red-500"
           >
