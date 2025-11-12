@@ -1,4 +1,4 @@
-const env = "production" as string;
+const env = "prod" as string;
 
 export default env == "development"
   ? "http://localhost:8080"
