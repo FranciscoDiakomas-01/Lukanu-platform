@@ -54,7 +54,14 @@ export default class UserClientService {
       };
     }
   }
-  public async updateMyData() {}
-  public async updateCredentials() { }
-  
+  public async updateMyData(data: any) {
+    try {
+    } catch (error) {
+      return {
+        hasError: true,
+        message: "Erro ao actualizar os dados",
+      };
+    }
+  }
+  public async updateCredentials() {}
 }
