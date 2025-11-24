@@ -1,4 +1,3 @@
-import { env } from 'prisma/config';
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import Keyv from 'keyv';
 import KeyvRedis from '@keyv/redis';
@@ -7,12 +6,8 @@ import KeyvRedis from '@keyv/redis';
 export default class CacheService implements OnModuleInit {
   private readonly logger = new Logger('CacheService');
   private redis: Keyv<any>;
-  private readonly redisUrl =
-    process.env.NODE_ENV == 'development'
-      ? process.env.REDIS_URL_LOCAL
-      : process.env.REDIS_URL;
+  private readonly redisUrl = process.env.REDIS_URL;
   async onModuleInit() {
-    console.log(process.env.NODE_ENV);
     if (!this.redisUrl) {
       this.logger.error(
         'REDIS_URL não está definido nas variáveis de ambiente!',
