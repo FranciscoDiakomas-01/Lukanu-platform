@@ -2,7 +2,6 @@ import server from "../server";
 
 export default class UserClientService {
   constructor(private readonly token: string) {}
-
   public async getMyData() {
     try {
       const res = await fetch(`${server}/users/me`, {
@@ -88,7 +87,6 @@ export default class UserClientService {
       };
     }
   }
-
   public async updateCredentials(data: {
     newPassWord: string;
     odlPassword: string;
@@ -127,6 +125,25 @@ export default class UserClientService {
       return {
         sucess: true,
         message: "Erro ao actualizar os dados",
+      };
+    }
+  }
+  public async getUsers(page: number) {
+    try {
+      const data = await fetch(`${server}/users?page=${page}&limit=20`, {
+        headers: {
+          authorization: `BEARER ${this.token}`,
+          "Content-Type": "application/json",
+        },
+      });
+
+      const responseData = await data.json();
+      return responseData;
+    } catch (error: any) {
+      return {
+        lastPage: 1,
+        hasError: true,
+        message: error?.message ?? error?.cause ?? "Erro ao listar os usuários",
       };
     }
   }

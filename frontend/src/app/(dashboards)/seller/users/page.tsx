@@ -1,10 +1,21 @@
-'use client'
+"use client";
 
+import DashordHeader from "@/components/DashordHeader";
+import UserClientService from "@/service/User";
+import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 
-export default function Usera() {
- return (
-   <div>
+export default function Users() {
+  const [isLoading, setIsLoading] = useState(true);
+  const [service, setService] = useState<UserClientService>();
 
-   </div>
- );
+  useEffect(() => {
+
+    const token = localStorage.getItem("aces")
+  }, []);
+  return (
+    <main className="w-full">
+      <DashordHeader whoIs="seller" showInput={false} />
+    </main>
+  );
 }
